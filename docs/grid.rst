@@ -91,6 +91,40 @@ fitted coordinate to an abundance scale, see :doc:`python-api`. Use
 ``keep_runs=True`` to inspect the FERRE inputs and logs after a successful
 fit. A failed FERRE run reports where it kept those files.
 
+Try a small APOGEE DR17 grid
+----------------------------
+
+The checkout includes ``examples/apogee-dr17-ba-mini.dat``, a 17 KB ASCII
+FERRE library derived from the SDSS DR17 APOGEE BA grid for hot stars.
+It contains nine original model spectra on a 3 × 3 grid in ``METALS``
+(−1.0, −0.5, 0.0 dex) and ``TEFF`` (8000, 8500, 9000 K). Surface gravity
+and rotation are fixed at the source nodes ``LOGG = 4.0`` and
+``LGVSINI = 1.07918``. Each spectrum retains 160 native vacuum pixels
+from about 16792.5 to 16829.5 Å. Use this narrow subset for software tests
+and demonstrations.
+
+.. code-block:: python
+
+   from aspcap import Grid
+
+   grid = Grid("examples/apogee-dr17-ba-mini.dat")
+   print(grid)
+   truth = {"METALS": -0.65, "TEFF": 8625}
+   observed = list(grid(truth)["flux"])
+   observed[60] += 0.0001
+   observed[90] -= 0.0001
+   fit = grid.fit(observed, [0.003] * grid.npix)
+   print(fit.parameters)  # Near METALS = -0.65 and TEFF = 8625
+
+The fixture copies red-segment pixels 1342 through 1501 (zero-based) from
+the uncompressed, APO line-spread-function-convolved library
+``f_apssBA_lsfcombo5_l33``. Its header retains the source wavelength spacing
+and resolution, and the two fixed axes are omitted from the mini grid.
+See the SDSS `DR17 APOGEE library description
+<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_ and the archive's
+`source header <https://data.sdss.org/sas/dr17/apogee/spectro/speclib/synth/synspec/kurucz/solarisotopes/sBA_lsfcombo5_l33/f_apssBA_lsfcombo5_l33.hdr>`_
+and `binary flux library <https://data.sdss.org/sas/dr17/apogee/spectro/speclib/synth/synspec/kurucz/solarisotopes/sBA_lsfcombo5_l33/f_apssBA_lsfcombo5_l33.unf>`_.
+
 API reference
 -------------
 
