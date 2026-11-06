@@ -46,7 +46,7 @@ class Grid:
         FERRE executable used for evaluation and fitting.
     """
 
-    def __init__(self, path, outwave=None, *, executable="ferre.x"):
+    def __init__(self, path, outwave=None, *, executable="ferre"):
         """Open a library and validate its metadata.
 
         Parameters
@@ -59,7 +59,7 @@ class Grid:
             within the native wavelength range and use its units and frame.
         executable : str or path-like, optional
             Executable name on PATH or a path to a FERRE executable. Defaults
-            to ferre.x. It is resolved when a run starts.
+            to ferre. It is resolved when a run starts.
 
         Raises
         ------
@@ -347,7 +347,7 @@ class FerreFit:
 
 
 def run_ferre(grid, flux, error, start, free_label, weights, *,
-              executable="ferre.x", keep_runs=False, run_root=None):
+              executable="ferre", keep_runs=False, run_root=None):
     """Run the abundance workflow's single-label fit on the native grid."""
     return grid.fit(flux, error, start, free_labels=(free_label,), weights=weights,
                     executable=executable, keep_runs=keep_runs, run_root=run_root)

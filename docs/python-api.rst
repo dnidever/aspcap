@@ -33,7 +33,7 @@ result dictionary plus an iterator over the diagnostic pixels.
    print(result["abundance"])
    pixel_rows = list(pixels)
 
-Pass ``executable="/path/to/ferre.x"`` if FERRE is outside your PATH.
+Pass ``executable="/path/to/ferre"`` if FERRE is outside your PATH.
 Each pixel row contains wavelength, normalized flux, normalized uncertainty,
 model flux, and weight.
 

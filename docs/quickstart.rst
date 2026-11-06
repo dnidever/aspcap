@@ -12,8 +12,8 @@ From the repository checkout, install ASPCAP and run the synthetic Mg example.
    python -m pip install -e .
    aspcap abundances examples/one-star.json --output abundance.csv --pixels pixels.csv
 
-ASPCAP looks for ``ferre.x`` on your PATH. If it is elsewhere, append
-``--ferre /path/to/ferre.x`` to the command.
+ASPCAP looks for ``ferre`` on your PATH. If it is elsewhere, append
+``--ferre /path/to/ferre`` to the command.
 
 Inspect the result
 ------------------

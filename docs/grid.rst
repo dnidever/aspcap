@@ -21,7 +21,7 @@ Open and inspect a library
 
 For a binary library, give the path to its ``.hdr`` file and keep the matching
 ``.unf`` file beside it. If FERRE is outside your PATH, pass
-``executable="/path/to/ferre.x"`` when opening the grid. You can inspect the
+``executable="/path/to/ferre"`` when opening the grid. You can inspect the
 header before installing FERRE. Model evaluation and fitting use the executable.
 
 Evaluate synthetic spectra

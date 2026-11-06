@@ -37,7 +37,7 @@ class AbundanceTest(unittest.TestCase):
             self.fit(self.grid, windows=((15020, 15030),))
 
     def test_real_ferre(self):
-        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre.x")
+        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
         if not executable:
             self.skipTest("Set ASPCAP_TEST_FERRE to run the FERRE integration test")
         with tempfile.TemporaryDirectory() as root:
@@ -59,7 +59,7 @@ class AbundanceTest(unittest.TestCase):
             self.assertEqual(sorted(p.name for p in Path(root).iterdir()), ["toy.hdr", "toy.unf"])
 
     def test_grid_model_and_fit(self):
-        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre.x")
+        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
         if not executable:
             self.skipTest("Set ASPCAP_TEST_FERRE to run the FERRE integration test")
         grid = Grid(self.grid.path, executable=executable)

@@ -13,7 +13,7 @@ python -m pip install -e .
 aspcap abundances examples/one-star.json --output abundance.csv --pixels pixels.csv
 ```
 
-If `ferre.x` is outside your PATH, add `--ferre /path/to/ferre.x`. The example
+If `ferre` is outside your PATH, add `--ferre /path/to/ferre`. The example
 uses a synthetic spectrum and a toy grid. Expect a raw `ALPHA` coordinate of
 about 0.20 and a reported `[Mg/H]` of about −0.05, using four pixels and fixed
 `METALS = -0.25`. The pixel CSV shows the normalized flux, uncertainty, model,
@@ -65,7 +65,7 @@ iterates over the diagnostic rows.
 The FERRE protocol lives in `aspcap/ferre.py`, the abundance logic in
 `aspcap/abundances.py`, and file input and output in `aspcap/cli.py`. Run
 `python -m unittest discover -s tests -v` for the tests. Set
-`ASPCAP_TEST_FERRE=/path/to/ferre.x` to include the integration test if FERRE
+`ASPCAP_TEST_FERRE=/path/to/ferre` to include the integration test if FERRE
 is outside your PATH.
 
 ## Documentation

@@ -20,7 +20,7 @@ def _run(args):
         rows = list(csv.DictReader(file))
     columns = [[float(row[name]) for row in rows]
                for name in ("wavelength", "flux", "error", "continuum")]
-    executable = args.ferre or config.get("ferre", "ferre.x")
+    executable = args.ferre or config.get("ferre", "ferre")
     if not args.ferre and "/" in executable:
         executable = path.parent / executable
     result, pixels = fit_abundance(
