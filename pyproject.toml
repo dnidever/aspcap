@@ -13,3 +13,6 @@ aspcap = "aspcap.cli:main"
 
 [tool.setuptools]
 packages = ["aspcap"]
+
+[tool.setuptools.package-data]
+aspcap = ["data/*.hdr", "data/*.unf", "data/*-weights.json"]

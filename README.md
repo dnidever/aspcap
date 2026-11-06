@@ -78,3 +78,14 @@ preview the guide locally after installing ASPCAP:
 python -m pip install -r docs/requirements.txt
 python -m sphinx -W -b html docs docs/_build/html
 ```
+
+
+The full-wavelength APOGEE DR17 M-giant test grid and detector weights are
+included when you install ASPCAP from this branch.
+
+```sh
+python -m pip install 'git+https://github.com/dnidever/aspcap.git@hge/first-abundance-fit'
+```
+
+See the [Grid walkthrough](docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
+for an example using the installed files.

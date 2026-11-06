@@ -100,14 +100,17 @@ log g from 0.0 to 2.0, and effective temperatures from 3400 to 3800 K.
 The generator reconstructs all 7,514 modeled detector pixels from the
 same SDSS DR17 Synspec NLTE M-giant library as the smaller fixture below.
 
-From the checkout, install NumPy and generate the binary grid. The script
-downloads the PCA header and the 125 selected coefficient records using
-HTTP range requests. The generated files occupy about 4.3 MB.
+Install ASPCAP from the project branch to get the grid and detector
+weights as package data. The installed files occupy about 4.3 MB.
 
 .. code-block:: sh
 
-   python -m pip install numpy
-   python examples/download_dr17_mgiant.py dr17-grid
+   python -m pip install 'git+https://github.com/dnidever/aspcap.git@hge/first-abundance-fit'
+
+To reproduce the grid from SDSS, run
+``python examples/download_dr17_mgiant.py dr17-grid`` from the checkout
+with NumPy installed. The script downloads the PCA header and 125
+coefficient records via HTTP range requests.
 
 The output uses the 8,575 native apStar wavelength pixels, from about
 15100.8 to 16999.8 Å in vacuum. Pixels outside the three modeled detector
@@ -118,11 +121,11 @@ for your observation.
 .. code-block:: python
 
    import json
-   from pathlib import Path
+   from importlib.resources import files
 
    from aspcap import Grid
 
-   directory = Path("dr17-grid")
+   directory = files("aspcap").joinpath("data")
    grid = Grid(directory / "apogee-dr17-mgiant-full.hdr")
    weights = json.loads(
        (directory / "apogee-dr17-mgiant-full-weights.json").read_text()
