@@ -14,13 +14,61 @@ import tempfile
 
 
 class Grid:
-    """A single-segment FERRE library.
+    """Inspect, interpolate, and fit a synthetic spectral library with FERRE.
 
-    Open an ASCII library or the .hdr file of a binary library. The optional
-    outwave sets the default output wavelengths for model evaluation.
+    The header is read when the grid is opened. FERRE is invoked only when
+    evaluating models or fitting spectra. Supported libraries have a single
+    segment, positive spectral resolution, and uncompressed spectra.
+    Evaluation and fitting require at least two points on every label axis.
+
+    Attributes
+    ----------
+    path : pathlib.Path
+        Resolved path to the ASCII library or binary header.
+    labels : tuple of str
+        Case-sensitive labels in FERRE axis order.
+    lower, step, counts : tuple
+        Lower limits, grid spacings, and point counts in label order.
+    ranges : tuple of tuple of float
+        Inclusive physical bounds, one (lower, upper) pair per label.
+    wavelengths : tuple of float
+        Native wavelength pixels in the library's wavelength units.
+        Logarithmically sampled headers are converted to physical wavelengths.
+    vacuum, binary : bool
+        Whether wavelengths are in vacuum and whether library data are binary.
+    resolution : float
+        Spectral resolution recorded in the header.
+    nlabels, nspectra, npix : int
+        Number of axes, product of the axis sizes, and native pixel count.
+    outwave : tuple of float or None
+        Default output sampling for model evaluation.
+    executable : str or path-like
+        FERRE executable used for evaluation and fitting.
     """
 
     def __init__(self, path, outwave=None, *, executable="ferre.x"):
+        """Open a library and validate its metadata.
+
+        Parameters
+        ----------
+        path : str or path-like
+            ASCII library path, or a binary library's .hdr path. The binary
+            data must be in a sibling .unf file with the same stem.
+        outwave : sequence of float, optional
+            Default output wavelengths for evaluation. Values must lie
+            within the native wavelength range and use its units and frame.
+        executable : str or path-like, optional
+            Executable name on PATH or a path to a FERRE executable. Defaults
+            to ferre.x. It is resolved when a run starts.
+
+        Raises
+        ------
+        OSError
+            The library header cannot be opened.
+        ValueError
+            The header or wavelength selection is invalid or unsupported,
+            or the binary data file is missing.
+        """
         path = Path(path).resolve()
         binary = path.suffix == ".hdr"
         if binary and not path.with_suffix(".unf").is_file():
@@ -92,10 +140,15 @@ class Grid:
 
     @classmethod
     def read(cls, path, **options):
-        """Open a library. Equivalent to constructing Grid directly."""
+        """Open a library using the same path and options as the constructor.
+
+        Pass outwave or executable as keyword options. Returns an instance
+        of the class on which this method is called.
+        """
         return cls(path, **options)
 
     def __repr__(self):
+        """Show library size, label ranges, and native wavelength coverage."""
         summary = (f"Grid({str(self.path)!r}, {self.nlabels} labels, "
                    f"{self.nspectra} spectra, {self.npix} pixels)")
         axes = [f"  {name}: {lo:g} to {hi:g} (step {step:g}, {count} points)"
@@ -128,9 +181,37 @@ class Grid:
     def __call__(self, pars, wave=None):
         """Interpolate one model or a batch of models in a single FERRE run.
 
-        Supply a mapping from labels to values, a vector in grid-label order,
-        or a sequence of either. Return a dictionary with wave and flux.
-        Model flux is on the library's flux scale.
+        Parameters
+        ----------
+        pars : mapping or sequence
+            One complete mapping from labels to values, one vector in
+            grid-label order, or a nonempty batch of mappings or vectors.
+            Values must be finite and within their label bounds.
+        wave : sequence of float, optional
+            Output wavelengths within the native range, in the library's
+            units and frame. Overrides outwave for this call. If neither is
+            supplied, use the native pixels.
+
+        Returns
+        -------
+        dict
+            The wave entry is a wavelength tuple. The flux entry is one flux
+            tuple for a single model or a tuple of flux tuples in batch order,
+            including for a one-row batch. Flux is on the library's scale.
+
+        Notes
+        -----
+        FERRE interpolates linearly in the label dimensions. Any wavelength
+        resampling is linear and preserves the requested wavelength order.
+
+        Raises
+        ------
+        ValueError
+            The parameters or output wavelengths are invalid, or the
+            executable cannot be located.
+        RuntimeError
+            FERRE failed or returned invalid model output. The run directory
+            is retained and included in the error message.
         """
         if isinstance(pars, Mapping):
             batch, rows = False, (pars,)
@@ -159,16 +240,65 @@ class Grid:
         return {"wave": output_wave, "flux": models if batch else models[0]}
 
     def model(self, wave, *pars):
-        """Return only model flux for an optimizer using model(wave, *pars)."""
+        """Evaluate one model and return its flux tuple.
+
+        Parameters
+        ----------
+        wave : sequence of float or None
+            Output wavelengths as in __call__. None uses the grid default.
+        *pars : float
+            One positional value per grid label, in the order of labels.
+
+        Returns
+        -------
+        tuple of float
+            Model flux at the requested wavelengths. The wavelength-first
+            signature is suitable for optimizers such as scipy.optimize.curve_fit.
+        """
         return self(pars, wave=wave)["flux"]
 
     def fit(self, flux, error, start=None, *, free_labels=None, weights=None,
             executable=None, keep_runs=False, run_root=None):
         """Fit a prepared spectrum on the native grid with FERRE.
 
-        By default, vary every grid axis and initialize
-        at the grid midpoint. To fix labels, pass only the labels to vary.
-        The optional weights are nonnegative and zero excludes a pixel.
+        Parameters
+        ----------
+        flux, error : sequence of float
+            Observed flux and one-sigma uncertainties, in native pixel order
+            and on the library's flux scale. Each sequence must have npix
+            entries. Weighted pixels require finite flux and positive finite
+            errors. The fit does not apply wavelength or continuum corrections.
+        start : mapping or sequence of float, optional
+            Full starting parameters keyed by label or in grid-label order.
+            Defaults to the midpoint of each axis. Values for frozen labels
+            are taken from this vector.
+        free_labels : str or sequence of str, optional
+            One or more distinct labels to vary. Defaults to every grid label.
+        weights : sequence of float, optional
+            Nonnegative finite weights with one entry per native pixel. Zero
+            excludes a pixel. Defaults to unit weights. More pixels must have
+            positive weight than there are free labels.
+        executable : str or path-like, optional
+            Override this grid's executable for the fit.
+        keep_runs : bool, optional
+            Keep the FERRE files after success. Failed runs retain their files.
+        run_root : str or path-like, optional
+            Existing parent directory for the run files. Defaults to the
+            system temporary directory.
+
+        Returns
+        -------
+        FerreFit
+            Fitted parameters and conditional errors keyed by label, FERRE's
+            reduced chi-square, and model flux on the native grid.
+
+        Raises
+        ------
+        ValueError
+            The inputs are invalid or the executable cannot be located.
+        RuntimeError
+            FERRE failed or returned invalid fit output. The run directory
+            is retained and included in the error message.
         """
         if start is None:
             start = tuple((lo + hi) / 2 for lo, hi in self.ranges)
@@ -202,6 +332,14 @@ class Grid:
 
 @dataclass(frozen=True)
 class FerreFit:
+    """Result of a native-grid FERRE fit.
+
+    Parameters and errors are keyed by grid label. Errors are conditional
+    on any frozen labels and are None when FERRE reports no usable positive
+    uncertainty. reduced_chi2 is FERRE's reported statistic, and model is the
+    best-fit flux tuple in native pixel order.
+    """
+
     parameters: dict[str, float]
     errors: dict[str, float | None]
     reduced_chi2: float
