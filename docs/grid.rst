@@ -91,39 +91,49 @@ fitted coordinate to an abundance scale, see :doc:`python-api`. Use
 ``keep_runs=True`` to inspect the FERRE inputs and logs after a successful
 fit. A failed FERRE run reports where it kept those files.
 
-Try a small APOGEE DR17 grid
-----------------------------
+Fit a small APOGEE DR17 M-giant grid
+------------------------------------
 
-The checkout includes ``examples/apogee-dr17-ba-mini.dat``, a 17 KB ASCII
-FERRE library derived from the SDSS DR17 APOGEE BA grid for hot stars.
-It contains nine original model spectra on a 3 × 3 grid in ``METALS``
-(−1.0, −0.5, 0.0 dex) and ``TEFF`` (8000, 8500, 9000 K). Surface gravity
-and rotation are fixed at the source nodes ``LOGG = 4.0`` and
-``LGVSINI = 1.07918``. Each spectrum retains 160 native vacuum pixels
-from about 16792.5 to 16829.5 Å. Use this narrow subset for software tests
-and demonstrations.
+The checkout includes ``examples/apogee-dr17-mgiant-mini.dat``, a compact
+ASCII FERRE library derived from the SDSS DR17 APOGEE Synspec NLTE M-giant
+grid. It contains 27 spectra on a 3 × 3 × 3 grid.
+
+* ``METALS`` ([M/H]) runs from −0.50 to 0.00 dex in steps of 0.25 dex.
+* ``LOGG`` runs from 0.5 to 1.5 in steps of 0.5 dex.
+* ``TEFF`` runs from 3500 to 3700 K in steps of 100 K.
+
+Each spectrum retains 160 native vacuum pixels from about 15736.6 to
+15771.2 Å. The remaining library axes are held fixed at
+``LOG10VDOP = 0.38021``, ``C = 0``, ``N = 0``, and ``O Mg Si S Ca Ti = 0``.
+Use this narrow subset for software tests and demonstrations.
+
+The following example interpolates a synthetic observation between grid
+nodes, adds small residuals, then fits all three labels from their grid
+midpoints.
 
 .. code-block:: python
 
    from aspcap import Grid
 
-   grid = Grid("examples/apogee-dr17-ba-mini.dat")
+   grid = Grid("examples/apogee-dr17-mgiant-mini.dat")
    print(grid)
-   truth = {"METALS": -0.65, "TEFF": 8625}
+   truth = {"METALS": -0.32, "LOGG": 1.14, "TEFF": 3625}
    observed = list(grid(truth)["flux"])
    observed[60] += 0.0001
    observed[90] -= 0.0001
-   fit = grid.fit(observed, [0.003] * grid.npix)
-   print(fit.parameters)  # Near METALS = -0.65 and TEFF = 8625
 
-The fixture copies red-segment pixels 1342 through 1501 (zero-based) from
-the uncompressed, APO line-spread-function-convolved library
-``f_apssBA_lsfcombo5_l33``. Its header retains the source wavelength spacing
-and resolution, and the two fixed axes are omitted from the mini grid.
+   fit = grid.fit(observed, [0.003] * grid.npix)
+   print(fit.parameters)  # About -0.32, 1.14, and 3630 K
+
+The fixture reconstructs blue-segment pixels 2739 through 2898
+(zero-based) from the archived PCA coefficients and basis vectors. It
+stores the resulting flux in ASCII, with the original wavelength spacing
+and resolution. The source is the APO LSF-a library
+``p_apssgM_200921nlte_lsfa_012_075``.
 See the SDSS `DR17 APOGEE library description
-<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_ and the archive's
-`source header <https://data.sdss.org/sas/dr17/apogee/spectro/speclib/synth/synspec/kurucz/solarisotopes/sBA_lsfcombo5_l33/f_apssBA_lsfcombo5_l33.hdr>`_
-and `binary flux library <https://data.sdss.org/sas/dr17/apogee/spectro/speclib/synth/synspec/kurucz/solarisotopes/sBA_lsfcombo5_l33/f_apssBA_lsfcombo5_l33.unf>`_.
+<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_ and the
+`source archive directory
+<https://data.sdss.org/sas/dr17/apogee/spectro/speclib/synth/synspec/marcs/giantisotopes/sgM_200921nlte_lsfa/>`_.
 
 API reference
 -------------
