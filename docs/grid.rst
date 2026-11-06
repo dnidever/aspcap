@@ -91,6 +91,53 @@ fitted coordinate to an abundance scale, see :doc:`python-api`. Use
 ``keep_runs=True`` to inspect the FERRE inputs and logs after a successful
 fit. A failed FERRE run reports where it kept those files.
 
+Fit the full APOGEE DR17 wavelength grid
+----------------------------------------
+
+Use the 5 × 5 × 5 M-giant example to fit metallicity, surface gravity, and
+temperature together. Its 125 spectra cover [M/H] from −1.0 to 0.0 dex,
+log g from 0.0 to 2.0, and effective temperatures from 3400 to 3800 K.
+The generator reconstructs all 7,514 modeled detector pixels from the
+same SDSS DR17 Synspec NLTE M-giant library as the smaller fixture below.
+
+From the checkout, install NumPy and generate the binary grid. The script
+downloads the PCA header and the 125 selected coefficient records using
+HTTP range requests. The generated files occupy about 4.3 MB.
+
+.. code-block:: sh
+
+   python -m pip install numpy
+   python examples/download_dr17_mgiant.py dr17-grid
+
+The output uses the 8,575 native apStar wavelength pixels, from about
+15100.8 to 16999.8 Å in vacuum. Pixels outside the three modeled detector
+segments have placeholder flux of one and a weight of zero. Always pass
+the provided weights to the fit, combining them with any additional mask
+for your observation.
+
+.. code-block:: python
+
+   import json
+   from pathlib import Path
+
+   from aspcap import Grid
+
+   directory = Path("dr17-grid")
+   grid = Grid(directory / "apogee-dr17-mgiant-full.hdr")
+   weights = json.loads(
+       (directory / "apogee-dr17-mgiant-full-weights.json").read_text()
+   )
+
+   truth = {"METALS": -0.32, "LOGG": 1.14, "TEFF": 3625}
+   observed = list(grid(truth)["flux"])
+   observed[600] += 0.0001
+   observed[4200] -= 0.0001
+   fit = grid.fit(observed, [0.003] * grid.npix, weights=weights)
+   print(fit.parameters)  # Near -0.32, 1.14, and 3625 K
+
+The binary data use little-endian, 32-bit floats as expected by the
+standard single-precision FERRE build.
+
 Fit a small APOGEE DR17 M-giant grid
 ------------------------------------
 
