@@ -57,3 +57,22 @@ class AbundanceTest(unittest.TestCase):
                     # This pixel depends on frozen METALS and must not pull the fit.
                     self.assertAlmostEqual(rows[1][3], 1.025, places=5)
             self.assertEqual(sorted(p.name for p in Path(root).iterdir()), ["toy.hdr", "toy.unf"])
+
+    def test_grid_model_and_fit(self):
+        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre.x")
+        if not executable:
+            self.skipTest("Set ASPCAP_TEST_FERRE to run the FERRE integration test")
+        grid = Grid(self.grid.path, executable=executable)
+        self.assertIn("15 spectra", repr(grid))
+        batch = grid([{"ALPHA": 0.2, "METALS": -0.25}, (0.5, 0.0)])
+        self.assertEqual(batch["wave"], grid.wavelengths)
+        self.assertAlmostEqual(batch["flux"][0][1], 1.025, places=5)
+        self.assertAlmostEqual(batch["flux"][1][3], 0.7, places=5)
+        self.assertAlmostEqual(grid.model([15002.5], 0.2, -0.25)[0], 0.82, places=5)
+
+        flux = list(grid((0.2, -0.15))["flux"])
+        flux[3] -= 0.001
+        flux[4] += 0.001
+        fit = grid.fit(flux, [0.01] * grid.npix)
+        self.assertAlmostEqual(fit.parameters["ALPHA"], 0.2, places=2)
+        self.assertAlmostEqual(fit.parameters["METALS"], -0.15, delta=0.015)
