@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aspcap"
+version = "0.1.0"
+description = "Element abundance fits with FERRE"
+requires-python = ">=3.9"
+
+[project.scripts]
+aspcap = "aspcap.cli:main"
+
+[tool.setuptools]
+packages = ["aspcap"]

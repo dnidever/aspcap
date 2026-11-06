@@ -1,0 +1,8 @@
+{
+  "star_id": "synthetic-star",
+  "grid": "toy-grid.dat",
+  "spectrum": "toy-spectrum.csv",
+  "species_file": "mg.json",
+  "wavelength_frame": "vacuum",
+  "parameters": {"ALPHA": 0.0, "METALS": -0.25}
+}
