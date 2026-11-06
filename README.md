@@ -67,3 +67,14 @@ The FERRE protocol lives in `aspcap/ferre.py`, the abundance logic in
 `python -m unittest discover -s tests -v` for the tests. Set
 `ASPCAP_TEST_FERRE=/path/to/ferre.x` to include the integration test if FERRE
 is outside your PATH.
+
+## Documentation
+
+The [user guide](docs/index.rst) includes a quickstart, input reference, and
+Python API. The repository includes Read the Docs build configuration. To
+preview the guide locally after installing ASPCAP:
+
+```sh
+python -m pip install -r docs/requirements.txt
+python -m sphinx -W -b html docs docs/_build/html
+```
