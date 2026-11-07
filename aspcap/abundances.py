@@ -6,7 +6,7 @@ from .ferre import run_ferre
 
 def fit_abundance(grid, wavelength, flux, error, continuum, parameters, *,
                   star_id, species, label, windows, add_labels=(),
-                  executable="ferre.x", keep_runs=False, run_root=None):
+                  executable="ferre", keep_runs=False, run_root=None):
     """Return a result row and a model on the native grid.
 
     Inputs are in the grid's wavelength units and air/vacuum convention.
