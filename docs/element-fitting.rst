@@ -6,6 +6,11 @@ windows. Hold all grid dimensions fixed except the abundance dimension,
 which is varied to fit the target element's abundance. Retain the supplied
 continuum throughout this stage.
 
+Use ``grid.fit_abundance(...)`` for an element measurement. It prepares the
+windowed, normalized inputs, calls ``grid.fit`` with one free label, and reports
+the abundance. The standalone ``aspcap.fit_abundance(grid, ...)`` remains
+available and uses the same implementation.
+
 Choosing the abundance dimension
 --------------------------------
 
@@ -26,14 +31,14 @@ library and an explicit abundance-scale convention are required.
 Windows, weights, and masks
 ---------------------------
 
-``fit_abundance`` accepts inclusive wavelength windows. A usable pixel inside
+``Grid.fit_abundance`` accepts inclusive wavelength windows. A usable pixel inside
 any window receives weight one; a pixel outside receives zero. Overlapping
 windows do not increase its weight. Measurement uncertainties also enter the
 fit. A Boolean ``mask`` uses True for unusable pixels. Nonfinite flux and
 nonpositive or nonfinite uncertainties are excluded.
 
 Arbitrary element-specific weight curves are not currently exposed by
-``fit_abundance``. For explicit nonnegative pixel weights and one free label,
+``Grid.fit_abundance``. For explicit nonnegative pixel weights and one free label,
 use ``Grid.fit(..., free_labels=(label,), weights=weights)`` after preparing
 the normalized arrays. This lower-level route does not perform the abundance
 conversion or assemble the element-result dictionary for you.
@@ -46,7 +51,7 @@ Run from the repository checkout:
 .. code-block:: python
 
    import csv
-   from aspcap import Grid, fit_abundance
+   from aspcap import Grid
 
    grid = Grid("examples/toy-grid.dat")
    with open("examples/toy-spectrum.csv", newline="") as handle:
@@ -55,8 +60,8 @@ Run from the repository checkout:
        [float(row[name]) for row in rows]
        for name in ("wavelength", "flux", "error", "continuum")
    ]
-   result, pixels = fit_abundance(
-       grid, wave, flux, error, continuum,
+   result, pixels = grid.fit_abundance(
+       wave, flux, error, continuum,
        {"ALPHA": 0.0, "METALS": -0.25},
        star_id="synthetic-star", species="Mg", label="ALPHA",
        windows=[(15002, 15005)], add_labels=("METALS",),

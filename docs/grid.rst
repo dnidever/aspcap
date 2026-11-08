@@ -262,7 +262,8 @@ this fit varies ``ALPHA`` only and uses four pixels around the toy feature.
 
 ``fit.parameters`` contains coordinates in the library's label system.
 For an element measurement that applies a fixed continuum and converts a
-fitted coordinate to an abundance scale, see :doc:`python-api`. Use
+fitted coordinate to an abundance scale, use ``grid.fit_abundance(...)``;
+see :doc:`element-fitting` and :doc:`python-api`. Use
 ``keep_runs=True`` to inspect the FERRE inputs and logs after a successful
 fit. A failed FERRE run reports where it kept those files.
 
@@ -360,7 +361,7 @@ API reference
 -------------
 
 .. autoclass:: aspcap.Grid
-   :members: read, contains, model, fit
+   :members: read, contains, model, fit, fit_abundance
    :special-members: __init__, __call__, __repr__
 
 .. autoclass:: aspcap.ferre.FerreFit

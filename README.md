@@ -88,11 +88,11 @@ fixed global parameters and continuum. The reduced χ² column comes from FERRE.
 ## Use from Python
 
 ```python
-from aspcap import Grid, fit_abundance
+from aspcap import Grid
 
 grid = Grid.read("examples/toy-grid.dat")
-result, pixels = fit_abundance(
-    grid, wavelength, flux, error, continuum,
+result, pixels = grid.fit_abundance(
+    wavelength, flux, error, continuum,
     {"ALPHA": 0.0, "METALS": -0.25},
     star_id="my-star", species="Mg", label="ALPHA",
     windows=[(15002, 15005)], add_labels=["METALS"],

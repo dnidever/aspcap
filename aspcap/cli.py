@@ -5,7 +5,7 @@ import csv
 import json
 from pathlib import Path
 
-from . import Grid, fit_abundance
+from . import Grid
 
 
 def _run(args):
@@ -29,8 +29,7 @@ def _run(args):
     executable = args.ferre or config.get("ferre", "ferre")
     if not args.ferre and "/" in executable:
         executable = path.parent / executable
-    result, pixels = fit_abundance(
-        grid,
+    result, pixels = grid.fit_abundance(
         *columns,
         config["parameters"],
         star_id=config["star_id"],

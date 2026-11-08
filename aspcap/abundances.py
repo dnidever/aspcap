@@ -2,7 +2,6 @@
 
 from math import isclose, isfinite
 import numpy as np
-from .ferre import run_ferre
 
 
 def fit_abundance(
@@ -18,12 +17,16 @@ def fit_abundance(
     label,
     windows,
     add_labels=(),
-    executable="ferre",
+    executable=None,
     keep_runs=False,
     run_root=None,
     mask=None,
 ):
     """Return a result row and a model on the native grid.
+
+    This standalone interface is equivalent to grid.fit_abundance(...).
+    Both share preparation/reporting and call grid.fit for the numerical fit.
+    An omitted executable uses the grid's configured executable.
 
     Inputs are in the grid's wavelength units and air/vacuum convention.
     The optional mask uses True for unusable pixels.
@@ -77,13 +80,12 @@ def fit_abundance(
             f"{species}: fewer than two usable pixels in the element windows"
         )
 
-    fit = run_ferre(
-        grid,
+    fit = grid.fit(
         normalized_flux,
         normalized_error,
         parameters,
-        label,
-        weights,
+        free_labels=(label,),
+        weights=weights,
         executable=executable,
         keep_runs=keep_runs,
         run_root=run_root,

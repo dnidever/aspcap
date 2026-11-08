@@ -476,6 +476,91 @@ class Grid:
             run_root=run_root,
         )
 
+    def fit_abundance(
+        self,
+        wavelength,
+        flux,
+        error,
+        continuum,
+        parameters,
+        *,
+        star_id,
+        species,
+        label,
+        windows,
+        add_labels=(),
+        executable=None,
+        keep_runs=False,
+        run_root=None,
+        mask=None,
+    ):
+        """Fit one element with a fixed continuum and other labels held fixed.
+
+        Parameters
+        ----------
+        wavelength, flux, error, continuum : sequence of float
+            One value per reconstructed native pixel. Wavelengths must match
+            this library. Flux and one-sigma errors are divided by the supplied
+            finite positive continuum; use ones for already normalized arrays.
+        parameters : mapping
+            Full global parameter solution, including a starting value for the
+            one free abundance label. Other labels remain fixed.
+        star_id, species : str
+            Spectrum identifier and target element name recorded in the result.
+        label : str
+            Exact grid label of the abundance dimension to vary.
+        windows : sequence of (float, float)
+            Inclusive wavelength intervals. Usable pixels inside their union
+            have unit weights; other pixels are excluded.
+        add_labels : sequence of str, optional
+            Distinct fixed logarithmic labels added to the fitted coordinate
+            to report [X/H]. Empty when the free label already represents [X/H].
+        executable : path-like, optional
+            Override this grid's FERRE executable for this fit.
+        keep_runs : bool, optional
+            Retain successful FERRE run files; defaults to False.
+        run_root : path-like, optional
+            Existing parent directory for FERRE run files.
+        mask : sequence of bool, optional
+            One value per native pixel; True excludes a bad pixel.
+
+        Returns
+        -------
+        result : dict
+            Element abundance, raw coordinate, conditional uncertainty,
+            reduced chi-square, used-pixel count, and basic flags.
+        pixels : iterator
+            Rows of wavelength, normalized flux, normalized error, model,
+            and window weight.
+
+        Notes
+        -----
+        Preparation and reporting are shared with the standalone
+        :func:`aspcap.fit_abundance`; the numerical fit calls ``self.fit`` with
+        one free label. This method does not refit the continuum or select an
+        element's grid dimension, windows, or abundance convention for you.
+        Errors from input validation and FERRE propagate as in ``Grid.fit``.
+        """
+        from .abundances import fit_abundance
+
+        return fit_abundance(
+            self,
+            wavelength,
+            flux,
+            error,
+            continuum,
+            parameters,
+            star_id=star_id,
+            species=species,
+            label=label,
+            windows=windows,
+            add_labels=add_labels,
+            executable=executable,
+            keep_runs=keep_runs,
+            run_root=run_root,
+            mask=mask,
+        )
+
 
 @dataclass(frozen=True)
 class FerreFit:
