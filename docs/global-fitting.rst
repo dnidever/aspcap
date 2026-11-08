@@ -92,5 +92,5 @@ uncertainties. An unavailable positive FERRE uncertainty is returned as None.
 Use ``keep_runs=True`` to retain FERRE inputs and logs after success.
 Failed runs retain their files and report their location. Current wrapper
 calls use linear grid interpolation and disable FERRE's internal continuum
-adjustment. An automatic global-fitting command and end-to-end pipeline are
-not yet provided; use the Python interface described here.
+adjustment. Use :doc:`pipeline` to coordinate normalization, this global fit, and element
+measurements from Python. A global-fitting command is not yet provided.

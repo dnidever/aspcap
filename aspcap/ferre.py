@@ -408,6 +408,64 @@ class Grid:
         """
         return self(pars, wave=wave, as_dict=True)["flux"]
 
+    def _spectrum_fit_inputs(self, flux, error=None, weights=None):
+        """Validate/map a spectrum and combine masks with native weights."""
+        spectrum = (
+            flux.to_native() if flux._native_indices is not None else flux.flatten()
+        )
+        if spectrum.wave is None:
+            raise ValueError("Spec1D fitting requires wavelengths")
+        if (
+            self.vacuum is None
+            or spectrum.wavevac is None
+            or spectrum.wavevac != self.vacuum
+        ):
+            raise ValueError(
+                "Spec1D wavelength frame must match the grid's common air/vacuum frame"
+            )
+        unit = str(spectrum.wave_unit).strip().lower()
+        if unit not in ("angstrom", "angstroms", "aa", "å"):
+            raise ValueError(
+                "Spec1D wavelengths must use Angstrom units; convert explicitly"
+            )
+        native = np.asarray(self.wavelengths)
+        tolerance = np.maximum(1e-6, np.abs(native) * 1e-10)
+        if len(spectrum.wave) != self.npix or not np.all(
+            np.isfinite(spectrum.wave) & (np.abs(spectrum.wave - native) <= tolerance)
+        ):
+            raise ValueError(
+                "Spec1D wavelengths must match the native grid; no resampling is applied"
+            )
+        error = spectrum.err if error is None else np.asarray(error, dtype=float)
+        if error is None:
+            raise ValueError(
+                "Spec1D has no uncertainties; supply spec.err or an explicit error vector"
+            )
+        error = np.asarray(error, dtype=float)
+        if error.shape != (self.npix,):
+            raise ValueError(
+                "Spec1D fitting errors must have one value per native pixel"
+            )
+        valid = (
+            ~spectrum.mask
+            & np.isfinite(spectrum.flux)
+            & np.isfinite(error)
+            & (error > 0)
+        )
+        if weights is None:
+            weights = np.ones(self.npix)
+        else:
+            weights = np.asarray(weights, dtype=float)
+            if weights.shape != (self.npix,) or not np.all(
+                np.isfinite(weights) & (weights >= 0)
+            ):
+                raise ValueError(
+                    "Weights must be finite and nonnegative with one entry per native pixel"
+                )
+        weights = np.where(valid, weights, 0.0)
+        flux = spectrum.flux
+        return flux, error, weights
+
     def fit(
         self,
         flux,
@@ -469,61 +527,7 @@ class Grid:
             is retained and included in the error message.
         """
         if isinstance(flux, Spec1D):
-            spectrum = (
-                flux.to_native() if flux._native_indices is not None else flux.flatten()
-            )
-            if spectrum.wave is None:
-                raise ValueError("Spec1D fitting requires wavelengths")
-            if (
-                self.vacuum is None
-                or spectrum.wavevac is None
-                or spectrum.wavevac != self.vacuum
-            ):
-                raise ValueError(
-                    "Spec1D wavelength frame must match the grid's common air/vacuum frame"
-                )
-            unit = str(spectrum.wave_unit).strip().lower()
-            if unit not in ("angstrom", "angstroms", "aa", "å"):
-                raise ValueError(
-                    "Spec1D wavelengths must use Angstrom units; convert explicitly"
-                )
-            native = np.asarray(self.wavelengths)
-            tolerance = np.maximum(1e-6, np.abs(native) * 1e-10)
-            if len(spectrum.wave) != self.npix or not np.all(
-                np.isfinite(spectrum.wave)
-                & (np.abs(spectrum.wave - native) <= tolerance)
-            ):
-                raise ValueError(
-                    "Spec1D wavelengths must match the native grid; no resampling is applied"
-                )
-            error = spectrum.err if error is None else np.asarray(error, dtype=float)
-            if error is None:
-                raise ValueError(
-                    "Spec1D has no uncertainties; supply spec.err or an explicit error vector"
-                )
-            error = np.asarray(error, dtype=float)
-            if error.shape != (self.npix,):
-                raise ValueError(
-                    "Spec1D fitting errors must have one value per native pixel"
-                )
-            valid = (
-                ~spectrum.mask
-                & np.isfinite(spectrum.flux)
-                & np.isfinite(error)
-                & (error > 0)
-            )
-            if weights is None:
-                weights = np.ones(self.npix)
-            else:
-                weights = np.asarray(weights, dtype=float)
-                if weights.shape != (self.npix,) or not np.all(
-                    np.isfinite(weights) & (weights >= 0)
-                ):
-                    raise ValueError(
-                        "Weights must be finite and nonnegative with one entry per native pixel"
-                    )
-            weights = np.where(valid, weights, 0.0)
-            flux = spectrum.flux
+            flux, error, weights = self._spectrum_fit_inputs(flux, error, weights)
         elif error is None:
             raise ValueError("Supply one-sigma errors with array flux input")
         if start is None:

@@ -26,7 +26,7 @@ See the [DR17 ASPCAP description](https://www.sdss4.org/dr17/irspec/aspcap/) for
 
 ### What this package currently provides
 
-This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. An automatic end-to-end pipeline that selects grids, normalizes spectra, runs the global fit, and loops over elements is not yet provided.
+This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; automatic input reading and grid selection are not yet provided.
 
 The current fit_abundance interface accepts supplied global parameters and a fixed continuum. It uses unit weights inside the selected windows and zero outside, excludes bad pixels, and uses measurement uncertainties in the fit. Arbitrary element-specific weight curves are not yet exposed by this interface; Grid.fit accepts explicit pixel weights. External normalization is separate from FERRE's internal continuum controls.
 
@@ -84,6 +84,19 @@ reconstructs model flux; ASPCAP reads the output geometry from the headers.
 See the [grid guide](https://aspcap.readthedocs.io/en/latest/grid.html) for formats
 and explicit access controls. The fit uses linear interpolation. The reported error is conditional on the
 fixed global parameters and continuum. The reduced χ² column comes from FERRE.
+
+## Run the pipeline
+
+```python
+from aspcap import Pipeline
+
+pipeline = Pipeline(grid=grid, elements=element_config, continuum=continuum_options)
+result = pipeline.fit(spectrum, initial=initial_parameters)
+print(result.parameters, result.abundances, result.flags)
+```
+
+See the [Pipeline guide](https://aspcap.readthedocs.io/en/latest/pipeline.html)
+for a complete example, intermediate results, and failure handling.
 
 ## Use from Python
 

@@ -19,12 +19,14 @@ See the `DR17 ASPCAP description <https://www.sdss4.org/dr17/irspec/aspcap/>`_ f
 What this package currently provides
 ------------------------------------
 
-This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. An automatic end-to-end pipeline that selects grids, normalizes spectra, runs the global fit, and loops over elements is not yet provided.
+This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; automatic input reading and grid selection are not yet provided.
 
 The current fit_abundance interface accepts supplied global parameters and a fixed continuum. It uses unit weights inside the selected windows and zero outside, excludes bad pixels, and uses measurement uncertainties in the fit. Arbitrary element-specific weight curves are not yet exposed by this interface; Grid.fit accepts explicit pixel weights. External normalization is separate from FERRE's internal continuum controls.
 
 See :doc:`ferre` for the fitting engine, its internal processing options,
 and the FERRE manual.
+
+Use :doc:`pipeline` to run normalization and both fitting stages together.
 
 The main topic pages are :doc:`grid`, :doc:`lsf`, :doc:`continuum`,
 :doc:`initial-estimates`, :doc:`global-fitting`, and :doc:`element-fitting`.
@@ -43,6 +45,7 @@ and :doc:`element-fitting` for the individual-element workflow.
    quickstart
    installation
    observed-spectra
+   pipeline
    ferre
    grid
    lsf

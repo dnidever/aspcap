@@ -103,5 +103,5 @@ Each diagnostic row contains wavelength, normalized flux, normalized error,
 model flux, and window weight. Inspect the target features and blends before
 accepting a measurement. Errors are conditional on the fixed global parameters
 and continuum; uncertainty in those inputs and model systematics are not
-propagated. Current fits use linear interpolation. Automatic iteration over an
-element list and calibration of abundances remain future pipeline work.
+propagated. Current fits use linear interpolation. The :doc:`pipeline` interface iterates over a supplied element list and retains
+individual failures. Calibration of abundances remains future work.
