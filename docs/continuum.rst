@@ -1,5 +1,5 @@
-External continuum normalization
-================================
+Continuum Normalization
+=======================
 
 See :doc:`ferre` for FERRE's internal processing sequence, control options,
 and a link to its manual.

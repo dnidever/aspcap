@@ -1,5 +1,5 @@
-Global stellar-parameter fitting
-================================
+Global Fitting
+==============
 
 The global stage fits the usable spectrum jointly to determine the stellar
 labels that influence many spectral features. It supplies the parameter solution

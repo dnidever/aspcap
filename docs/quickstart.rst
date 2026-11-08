@@ -1,5 +1,5 @@
-Quickstart
-==========
+Quick Start
+===========
 
 Install Python 3.9 or later and a working
 `FERRE executable <https://github.com/callendeprieto/ferre>`_.

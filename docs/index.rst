@@ -40,6 +40,7 @@ and :doc:`element-fitting` for the individual-element workflow.
    :maxdepth: 2
    :caption: User guide
 
+   quickstart
    ferre
    grid
    lsf
@@ -48,6 +49,5 @@ and :doc:`element-fitting` for the individual-element workflow.
    global-fitting
    element-fitting
    spectrum
-   quickstart
    inputs
    python-api

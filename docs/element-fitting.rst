@@ -1,5 +1,5 @@
-Individual-element abundance fitting
-====================================
+Abundance Fitting
+=================
 
 After :doc:`global-fitting`, fit each target element in selected spectral
 windows. Hold all grid dimensions fixed except the abundance dimension,
