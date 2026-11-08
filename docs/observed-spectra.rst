@@ -1,159 +1,108 @@
 Observed Spectra
 ================
 
-ASPCAP-style analysis can use an individual APOGEE visit spectrum or the
-combined spectrum for a star. Both must ultimately be compared with synthetic
-spectra on a compatible rest-frame wavelength scale. They differ in which
-preparation steps have already been performed.
+The supported input product for this ASPCAP workflow is **apStar** (asStar
+for APOGEE-South). You can fit either the **combined spectrum** or the
+**individual visit spectra stored in the same file**. Both are already on the
+common, stellar rest-frame wavelength grid.
 
-apVisit: an individual visit
-----------------------------
+Choosing a spectrum
+-------------------
 
-An ``apVisit`` file (``asVisit`` for APOGEE-South) contains a visit's flux,
-uncertainties, masks, and wavelength arrays for three detector chips. The
-original visit wavelengths retain the observed Doppler shift. Prepare these
-spectra by removing the measured shift and, for the current ASPCAP wrapper,
-resampling onto the synthetic library's native pixels.
+An apStar file contains multiple spectral rows. Select either a combined
+spectrum or one of the individual-visit rows, along with its corresponding
+uncertainties and pixel masks. The product can contain more than one combined
+spectrum with different weighting schemes; use the release's data model to
+identify the intended row rather than assuming every row is a visit.
 
-Velocity information is available in the processed visit headers and/or the
-corresponding survey summary data, but keyword names and conventions depend
-on the release. Historical readers used ``VRAD`` for the observed Doppler
-shift. DR17 reports measured visit velocities as ``VREL``, the barycentric
-correction as ``BC``, and the corrected velocity as ``VHELIO``. Despite its
-name, ``VHELIO`` is barycentric. Do not apply it directly to observer-frame
-wavelengths without accounting for the correction already included in it.
-Check the release's velocity convention, available header fields, and RV flags.
+The combined spectrum uses multiple visits to improve signal-to-noise.
+Individual rows let you analyze visits separately while using the same
+wavelength sampling. They remain individual measurements even though they
+have already been resampled. Keep each visit's identity and relevant
+instrumental information with its fit.
 
-For a receding velocity v that describes the shift of the actual wavelength
-array, the survey combination prescription is:
+Do not remove the Doppler shift again
+-------------------------------------
 
-.. math::
+The APOGEE combination pipeline has already removed each visit's measured
+Doppler shift and placed it on the common rest-frame scale before combination.
+The individual-visit rows saved in apStar are also shifted and resampled.
+Do not apply another radial-velocity correction using the file's recorded
+velocities. A barycentric velocity in the metadata does not imply that the
+stored spectral row still needs that shift.
 
-   \lambda_{\mathrm{rest}} = \frac{\lambda_{\mathrm{obs}}}{1 + v/c}.
-
-Use consistent velocity units and conventions. First correcting the wavelength
-array does not interpolate the measured flux; interpolation happens when the
-spectrum is placed on a different set of pixels. Preserve the three chip
-boundaries, masks, and uncertainties during that operation.
-
-See the SDSS `visit RV guidance
-<https://www.sdss4.org/dr17/irspec/use-radial-velocities/>`_ and
-`RV pipeline description
-<https://www.sdss4.org/dr17/irspec/radialvelocities/>`_.
-
-apStar: a combined, rest-frame spectrum
----------------------------------------
-
-The ``apStar``/``asStar`` product contains combined spectra and individual-visit
-rows that have already been velocity-corrected and resampled. Select the intended
-row: the combined product is not interchangeable with an original ``apVisit``
-array. Do not apply the visit velocity correction a second time to those rows.
-
-APOGEE combination removes each visit's measured Doppler shift, resamples with
-sinc interpolation onto a common vacuum, logarithmic wavelength grid, and
-combines the visits with weighting and bad-pixel treatment. The standard apStar
-grid has 8,575 pixels with:
+The common grid uses vacuum wavelengths. For the standard 8,575-pixel apStar
+array:
 
 .. math::
 
    \log_{10}(\lambda_i / \mathrm{\mathring{A}}) = 4.179 + 6\times10^{-6}i,
    \qquad i=0,\ldots,8574.
 
-A combined rest-frame spectrum still needs continuum normalization compatible
-with the library. The combination process restores an average continuum shape;
-``apStar`` does not mean an already ASPCAP-normalized spectrum. Inspect RV and
-spectral quality flags as well as the pixel masks.
-
-See `APOGEE visit combination
+See the SDSS `APOGEE visit-combination documentation
 <https://www.sdss4.org/dr17/irspec/spectral_combination/>`_ and
-`Using APOGEE Spectra <https://www.sdss4.org/dr17/irspec/spectra/>`_.
+`Using APOGEE Spectra <https://www.sdss4.org/dr17/irspec/spectra/>`_ for the
+products, weighting schemes, and wavelength convention.
 
-Which wavelength grid should be used for fitting?
--------------------------------------------------
+Preparing an apStar row for fitting
+-----------------------------------
 
-The apStar grid is a useful standard, but the fitting target is the grid the
-analysis actually uses. Some libraries contain only the modeled chip segments,
-a subset of the apStar wavelengths, or a different sampling altogether. Correcting
-a velocity, resampling a spectrum, and selecting library pixels are distinct
-operations. Avoid repeated interpolation when direct preparation onto the
-required fitting pixels is possible.
+1. Select the combined or individual-visit row and its matching error and
+   mask arrays. Retain the star and visit identifiers and inspect quality flags.
+2. Confirm that the chosen synthetic library has compatible wavelength units,
+   vacuum/air convention, coverage, and :doc:`lsf`. A combined spectrum can
+   have an effective instrumental profile different from a particular visit.
+3. Match the selected row to the library's native pixels. A library can contain
+   selected detector segments rather than the full apStar array. Do not
+   interpolate merely because a different row was selected: all these rows
+   already share the apStar wavelength scale.
+4. Exclude bad pixels and detector gaps, then apply :doc:`continuum`
+   consistently with the synthetic library. An apStar rest-frame spectrum is
+   not necessarily continuum normalized for ASPCAP fitting.
+5. Supply :doc:`initial-estimates` and run :doc:`global-fitting`, followed
+   by :doc:`element-fitting`, for the selected spectrum.
 
-For the current wrapper, ``Grid.fit`` and ``fit_abundance`` require native
-library pixels in the library's order. Our bundled full-range APOGEE fixture
-uses the apStar wavelength grid, with zero-weight detector gaps, so apStar
-sampling is the appropriate target for that fixture. This is not a requirement
-for every possible FERRE library.
+For the bundled full-range APOGEE fixture, the library uses the apStar grid
+with zero-weight detector gaps. For other libraries, use their actual
+wavelength arrays and modeled-pixel selection. The current fitting interfaces
+require native library pixels in the correct order. If a library uses a genuinely
+different sampling, an explicit preparation step is still needed; see
+:doc:`grid` and :doc:`ferre`.
 
-FERRE itself offers another route: supply the rest-frame observed wavelengths
-and use ``WINTER=2`` to interpolate trial models onto them. Then the observed
-flux need not be resampled. The current ASPCAP wrapper does not expose that
-internal resampling configuration; see :doc:`ferre`.
-
-What the earlier implementations did
+Context from earlier implementations
 ------------------------------------
 
-QASPCAP
-~~~~~~~
+DR17 ASPCAP's inspected IDL reader can select the combined spectrum and
+individual-visit rows from an apStar file. The driver prepares the selected
+rows for each synthetic-library segment. This supports the same useful
+distinction here: choose which spectrum to fit without repeating the visit
+combination pipeline's velocity correction and common-grid resampling.
 
-The inspected QASPCAP reads either apVisit or apStar data and obtains ``VRAD``
-from the header. It applies the first-order correction
-``x2 = x * (1 - VRAD/c)``. Its usual ``WINTER=0`` path interpolates flux and
-errors onto wavelengths read from the synthetic library, rather than hard-coding
-the full apStar grid. Its ``lsf2d`` path sets ``WINTER=2``, retains selected
-corrected observed wavelengths, and writes them for FERRE's model resampling.
-This is a historical implementation description, not a recommended method for
-interpolating modern bitmasks or propagating resampling uncertainties.
+The inspected Astra ASPCAP entry point targets coadded spectra in apStar,
+and its FERRE preprocessing selects the modeled detector pixels from the
+prepared arrays. That inspected main path does not establish an individual-visit
+analysis interface.
 
-Sources: `qaspcap.pro
-<https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L213-L270>`_ and
-`rd_apvisit.pro
-<https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/rd_apvisit.pro>`_.
-
-DR17 ASPCAP
-~~~~~~~~~~~
-
-The inspected IDL reader accepts apVisit data and apStar spectra, including
-optional visit rows already stored in apStar. It sorts the original apVisit
-chips into increasing wavelength. The driver applies the header ``VRAD``
-correction, handles air/vacuum compatibility, and interpolates each chip onto
-wavelengths constructed from that library segment's header, in log wavelength.
-Thus the target is the library's sampling, which can correspond to apStar chip
-pixels without being the entire 8,575-pixel array. Header corrections must be
-interpreted in the context of the product and release, avoiding a second
-correction to already rest-frame data.
-
-Sources: `aspcap_rdobsnew.pro
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/aspcap_rdobsnew.pro>`_ and
-`doaspcap.pro
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L245-L285>`_.
-
-Astra ASPCAP
-~~~~~~~~~~~~
-
-The inspected main ASPCAP entry point targets ``ApogeeCoaddedSpectrumInApStar``
-objects. FERRE preprocessing copies those flux/error arrays and selects modeled
-APOGEE pixels through its chip mask; wavelength interpolation defaults to zero.
-This path uses already prepared coadded spectra. It should not be described as
-a general original-apVisit Doppler-correction and resampling routine.
-
-Sources: `ASPCAP entry point
-<https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/__init__.py>`_ and
-`FERRE preprocessing
+Sources: `DR17 ASPCAP reader
+<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/aspcap_rdobsnew.pro>`_,
+`DR17 ASPCAP driver
+<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro>`_,
+`Astra ASPCAP entry point
+<https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/__init__.py>`_, and
+`Astra FERRE preprocessing
 <https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/ferre/processing.py>`_.
 
-Current support and preparation responsibilities
-------------------------------------------------
+Current Python interface
+------------------------
 
-This package currently provides :doc:`spectrum` containers and explicit mapping
-of already aligned chips onto native grid pixels. It does not yet provide
-an apVisit/apStar FITS reader, automatic header-velocity correction, or a general
-observed-spectrum resampling pipeline. ``Spec1D.from_native`` and ``to_native``
-map matching pixels; they do not perform Doppler shifts or interpolate arbitrary
-visit sampling. ``Grid`` output resampling resamples models, not observations.
+The apStar-only scope above defines the input workflow; an automatic FITS
+reader and row-selection interface are not yet implemented in this package.
+Currently, extract the selected arrays before constructing a :doc:`spectrum`
+object or calling the fitting interfaces. Spec1D supports orders, errors,
+masks, metadata, and mapping of matching detector pixels onto a native grid;
+it does not automatically select FITS rows or interpret velocity headers.
 
-For either product, preserve provenance, per-chip :doc:`lsf` information, and
-bad-pixel flags. Propagate uncertainties using the chosen interpolation weights;
-resampling can introduce neighboring-pixel covariance. Treat bitmasks as flags,
-not continuous flux values, and do not interpolate across detector gaps. Then
-apply :doc:`continuum` and proceed to :doc:`initial-estimates`,
-:doc:`global-fitting`, and :doc:`element-fitting`.
+Preserve the original pixel flags, propagate uncertainties for any additional
+resampling, and avoid interpolating across detector gaps. Previously resampled
+visit rows can already contain neighboring-pixel covariance; the current
+fitting interfaces use per-pixel errors rather than a full covariance matrix.
