@@ -1,19 +1,24 @@
 """Fit an individual species using the continuum and labels of a global fit."""
 
 from math import isclose, isfinite
+import numpy as np
 from .ferre import run_ferre
 
 
 def fit_abundance(grid, wavelength, flux, error, continuum, parameters, *,
                   star_id, species, label, windows, add_labels=(),
-                  executable="ferre", keep_runs=False, run_root=None):
+                  executable="ferre", keep_runs=False, run_root=None, mask=None):
     """Return a result row and a model on the native grid.
 
     Inputs are in the grid's wavelength units and air/vacuum convention.
+    The optional mask uses True for unusable pixels.
     Windows are inclusive (lower, upper) pairs with unit weights. The optional
     add_labels are fixed global-fit coordinates added to report [X/H].
     """
     npix = len(grid.wavelengths)
+    badmask = np.zeros(npix, bool) if mask is None else np.asarray(mask, dtype=bool)
+    if badmask.shape != (npix,):
+        raise ValueError("mask must have one Boolean value per grid pixel (True means bad)")
     if any(len(values) != npix for values in (wavelength, flux, error, continuum)):
         raise ValueError("Spectrum and continuum must have one row per grid pixel")
     if not all(isclose(a, b, rel_tol=0, abs_tol=1e-4 * (grid.wavelengths[1] - grid.wavelengths[0]))
@@ -29,11 +34,11 @@ def fit_abundance(grid, wavelength, flux, error, continuum, parameters, *,
         raise ValueError("Provide one or more finite wavelength windows (lower, upper)")
 
     normalized_flux, normalized_error, weights = [], [], []
-    for wave, value, sigma, scale in zip(wavelength, flux, error, continuum):
+    for wave, value, sigma, scale, bad in zip(wavelength, flux, error, continuum, badmask):
         if not isfinite(scale) or scale <= 0:
             raise ValueError("Global continuum values must be finite and positive")
         value, sigma = value / scale, sigma / scale
-        good = isfinite(value) and isfinite(sigma) and sigma > 0
+        good = not bad and isfinite(value) and isfinite(sigma) and sigma > 0
         normalized_flux.append(value if good else 1.0)
         normalized_error.append(sigma if good else 1e10)
         weights.append(int(good and any(lo <= wave <= hi for lo, hi in windows)))

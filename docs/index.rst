@@ -13,4 +13,6 @@ to the fit and which synthetic-grid label FERRE can vary.
    quickstart
    inputs
    grid
+   spectrum
+   continuum
    python-api

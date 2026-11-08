@@ -89,3 +89,28 @@ python -m pip install 'git+https://github.com/dnidever/aspcap.git@hge/first-abun
 
 See the [Grid walkthrough](docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
 for an example using the installed files.
+
+
+## Multi-order spectra and external continuum fitting
+
+`Spec1D` follows Doppler's `(pixels, orders)` layout, accepts unequal-length
+orders, preserves masks/metadata, and can map detector chips back to a native
+wavelength grid. It imports no Doppler fitting code or model loaders. Existing
+Doppler objects can be used directly with the continuum functions.
+
+```python
+from aspcap import Spec1D, continuum
+
+spec = Spec1D(flux_orders, wave=wavelength_orders, err=error_orders)
+result = continuum.fit(spec, method="chebyshev", degree=4)
+normalized = result.apply(spec)  # independent copy
+```
+
+Polynomial, spline, median, binned-percentile and model-ratio methods operate
+independently per order. All normalization here is outside FERRE. Applying a
+continuum rescales both flux and error; it does not include uncertainty in the
+continuum estimate. See [the spectrum guide](docs/spectrum.rst),
+[the continuum guide](docs/continuum.rst), and the runnable
+[example](examples/spectrum_continuum.py). The core design is adapted from
+[Doppler Spec1D](https://github.com/dnidever/doppler/blob/6e165f87c6d766eff6eaa1fbee2c82be5bb30cc0/doppler/spec1d.py);
+its MIT notice is retained in `LICENSE-DOPPLER`.
