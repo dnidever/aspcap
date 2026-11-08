@@ -118,6 +118,7 @@ def read_library(path):
             tuple(lo + i * dx for i in range(n))
             for lo, dx, n in zip(lower, steps, counts)
         )
+        rows = None
         nspectra = prod(counts)
     segments, wavelengths = [], []
     for header in headers:
@@ -194,6 +195,7 @@ def read_library(path):
         wavelengths=tuple(wavelengths),
         compressed=compressed,
         sparse=bool(nodefile),
+        coordinates=frozenset(rows) if rows is not None else None,
         header=root,
         stored_npix=int(root.get("npix", len(wavelengths))),
     )

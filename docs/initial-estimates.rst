@@ -40,7 +40,7 @@ initialization strategy.
    )
    print(fit.parameters)
 
-Run this example from the repository checkout with FERRE installed. It
+Run this example from the repository checkout. It
 illustrates the starting-value interface using two toy labels, not a physical
 six-label initial estimator.
 

@@ -49,7 +49,7 @@ convolution. The fit does not estimate a continuum.
 A runnable example
 ------------------
 
-From the repository checkout, after installing ASPCAP and FERRE:
+From the repository checkout:
 
 .. code-block:: python
 

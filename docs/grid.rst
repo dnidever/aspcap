@@ -6,7 +6,7 @@ and a link to its manual.
 
 Use :class:`aspcap.Grid` to inspect a FERRE library, generate synthetic spectra,
 or fit stellar labels with FERRE. Run these examples from the repository
-checkout after following the installation steps in :doc:`quickstart`. They
+checkout. They
 use the bundled synthetic library and vacuum wavelengths in ångströms.
 
 A grid is a library of synthetic spectra indexed by physical labels. Each node
@@ -172,8 +172,31 @@ Open and inspect a library
 
 For a binary library, give the path to its ``.hdr`` file and keep the matching
 ``.unf`` file beside it. If FERRE is outside your PATH, pass
-``executable="/path/to/ferre"`` when opening the grid. You can inspect the
-header before installing FERRE. Model evaluation and fitting use the executable.
+``executable="/path/to/ferre"`` when opening the grid. Header inspection reads metadata only. Model evaluation and fitting use FERRE.
+
+Check parameter coverage
+------------------------
+
+Use ``grid.contains(parameters)`` to check one point without running FERRE:
+
+.. code-block:: python
+
+   grid.contains({"ALPHA": 0.20, "METALS": -0.25})  # True
+   grid.contains({"ALPHA": 0.80, "METALS": -0.25})  # False
+   grid.contains((0.20, -0.25))  # positional values follow grid.labels
+
+The check includes label bounds and, for sparse grids, the stored neighbors
+needed for linear interpolation. A point can lie inside the outer bounds but
+still return False because an interpolation corner is missing. At an exact
+stored node, only neighbors with nonzero interpolation weights are required.
+Malformed labels or parameter vectors raise ValueError; nonfinite coordinates
+return False.
+
+To also evaluate the model and detect invalid spectra recognized by FERRE,
+use ``grid.contains(parameters, check_model=True)``. This requires the executable
+and can take longer. The default geometric check does not read flux arrays,
+so it cannot identify a zero-spectrum exclusion by itself. Coverage does not
+establish scientific accuracy or wavelength/LSF compatibility.
 
 Evaluate synthetic spectra
 --------------------------
@@ -252,17 +275,13 @@ log g from 0.0 to 2.0, and effective temperatures from 3400 to 3800 K.
 The generator reconstructs all 7,514 modeled detector pixels from the
 same SDSS DR17 Synspec NLTE M-giant library as the smaller fixture below.
 
-Install ASPCAP from PyPI to get the grid and detector
-weights as package data. The installed files occupy about 4.3 MB.
-
-.. code-block:: sh
-
-   python -m pip install --upgrade aspcap
+The grid and detector weights are bundled as package data and occupy about
+4.3 MB.
 
 To reproduce the grid from SDSS, run
-``python examples/download_dr17_mgiant.py dr17-grid`` from the checkout
-with NumPy installed. The script downloads the PCA header and 125
-coefficient records via HTTP range requests.
+``python examples/download_dr17_mgiant.py dr17-grid`` from the checkout.
+The script downloads the PCA header and 125 coefficient records via HTTP
+range requests.
 
 The output uses the 8,575 native apStar wavelength pixels, from about
 15100.8 to 16999.8 Å in vacuum. Pixels outside the three modeled detector
@@ -341,7 +360,7 @@ API reference
 -------------
 
 .. autoclass:: aspcap.Grid
-   :members: read, model, fit
+   :members: read, contains, model, fit
    :special-members: __init__, __call__, __repr__
 
 .. autoclass:: aspcap.ferre.FerreFit

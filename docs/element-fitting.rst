@@ -41,7 +41,7 @@ conversion or assemble the element-result dictionary for you.
 A runnable example
 ------------------
 
-Run from the repository checkout with ASPCAP and FERRE installed:
+Run from the repository checkout:
 
 .. code-block:: python
 

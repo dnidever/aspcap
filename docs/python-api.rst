@@ -44,14 +44,4 @@ See :doc:`grid` for model evaluation, fitting, and the Grid API reference.
 
 .. autofunction:: aspcap.fit_abundance
 
-Build this guide locally
-------------------------
-
-From the checkout, install the package and documentation requirements,
-then build the HTML.
-
-.. code-block:: sh
-
-   python -m pip install -e .
-   python -m pip install -r docs/requirements.txt
-   python -m sphinx -W -b html docs docs/_build/html
+See :doc:`installation` for documentation build instructions.

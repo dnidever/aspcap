@@ -4,6 +4,7 @@ from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+from itertools import product
 from math import isfinite
 from pathlib import Path
 import shutil
@@ -110,6 +111,9 @@ class Grid:
         self.ranges = tuple((axis[0], axis[-1]) for axis in self.axis_values)
         self.nspectra = first["nspectra"]
         self.sparse = any(item["sparse"] for item in libraries)
+        self._node_tables = tuple(
+            item["coordinates"] for item in libraries if item["coordinates"] is not None
+        )
         self.compressed = any(item["compressed"] for item in libraries)
         self.headers = tuple(item["header"] for item in libraries)
         self.stored_npix = tuple(item["stored_npix"] for item in libraries)
@@ -188,20 +192,91 @@ class Grid:
         wave = f"  Wavelength: {self.wavelengths[0]:g} to {self.wavelengths[-1]:g} ({frame})"
         return "\n".join([summary, *axes, wave])
 
-    def _parameters(self, pars):
+    def _parameters(self, pars, *, check_bounds=True):
         if isinstance(pars, Mapping):
             if set(pars) != set(self.labels):
                 raise ValueError(f"Parameters must match grid labels: {self.labels}")
             pars = [pars[label] for label in self.labels]
-        pars = tuple(float(value) for value in pars)
+        try:
+            pars = tuple(float(value) for value in pars)
+        except (TypeError, ValueError) as error:
+            raise ValueError("Supply one numeric value per grid label") from error
         if len(pars) != self.nlabels:
             raise ValueError(
                 f"Expected {self.nlabels} parameters in order {self.labels}"
             )
         for label, value, (low, high) in zip(self.labels, pars, self.ranges):
-            if not low <= value <= high:
+            if check_bounds and not low <= value <= high:
                 raise ValueError(f"Value for {label!r} is outside [{low:g}, {high:g}]")
         return pars
+
+    def contains(self, pars, *, check_model=False):
+        """Return whether one parameter point is covered by this grid.
+
+        Parameters
+        ----------
+        pars : mapping or sequence of float
+            Complete parameter mapping using exact grid labels, or one vector
+            in ``grid.labels`` order. This method accepts a single point.
+        check_model : bool, optional
+            Also evaluate the point with FERRE to check model validity. Defaults
+            to False: geometry is checked without reading spectra or launching
+            the executable. Enable this to detect invalid stored spectra such
+            as zero-spectrum exclusions recognized by FERRE in sparse grids.
+
+        Returns
+        -------
+        bool
+            False for nonfinite coordinates, points outside the inclusive label
+            bounds, or a missing linear-interpolation corner in a sparse grid.
+            Exact sparse nodes need only the neighbors with nonzero weights.
+            With check_model=True, a model flagged invalid by FERRE also returns
+            False. True is a coverage check, not a scientific quality assessment.
+
+        Raises
+        ------
+        ValueError
+            Labels, vector length, or numeric inputs are malformed, or the
+            executable cannot be located when check_model=True.
+        RuntimeError
+            Model checking fails for an execution or input-file error other
+            than FERRE returning an invalid model.
+
+        Notes
+        -----
+        The geometric check uses the current wrapper's linear interpolation.
+        Sparse coordinates are indexed once when the grid is opened. It does
+        not scan spectral payloads, validate a FERRE build's format support,
+        or test wavelength/LSF compatibility. With check_model=True, FERRE
+        evaluates the point using the current model-evaluation settings.
+        """
+        point = self._parameters(pars, check_bounds=False)
+        if any(
+            not isfinite(value) or not lo <= value <= hi
+            for value, (lo, hi) in zip(point, self.ranges)
+        ):
+            return False
+        if self._node_tables:
+            neighbors = []
+            for value, axis in zip(point, self.axis_values):
+                right = bisect_left(axis, value)
+                if right < len(axis) and axis[right] == value:
+                    neighbors.append((axis[right],))
+                else:
+                    neighbors.append((axis[right - 1], axis[right]))
+            if any(
+                any(corner not in table for table in self._node_tables)
+                for corner in product(*neighbors)
+            ):
+                return False
+        if check_model:
+            try:
+                self(point)
+            except RuntimeError as error:
+                if "FERRE returned an invalid model" in str(error):
+                    return False
+                raise
+        return True
 
     def _sample(self, value):
         for segment in self.segments:

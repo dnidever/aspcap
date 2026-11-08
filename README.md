@@ -124,10 +124,6 @@ python -m sphinx -W -b html docs docs/_build/html
 The full-wavelength APOGEE DR17 M-giant test grid and detector weights are
 included in ASPCAP installations.
 
-```sh
-python -m pip install --upgrade aspcap
-```
-
 See the [Grid walkthrough](https://github.com/dnidever/aspcap/blob/main/docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
 for an example using the installed files.
 
