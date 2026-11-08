@@ -1,8 +1,7 @@
 Quick Start
 ===========
 
-Install Python 3.9 or later and a working
-`FERRE executable <https://github.com/callendeprieto/ferre>`_.
+Follow :doc:`installation` to install ASPCAP and its FERRE dependency.
 The worked example was verified with FERRE 5.1.3.
 
 From the repository checkout, install ASPCAP and run the synthetic Mg example.

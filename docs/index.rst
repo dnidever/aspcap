@@ -41,6 +41,7 @@ and :doc:`element-fitting` for the individual-element workflow.
    :caption: User guide
 
    quickstart
+   installation
    ferre
    grid
    lsf

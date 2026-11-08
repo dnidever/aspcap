@@ -37,12 +37,13 @@ python -m pip install --upgrade aspcap
 ```
 
 The spectrum and continuum modules do not need a FERRE executable or Doppler
-model files. Install [FERRE](https://github.com/dnidever/ferre) separately when
-running spectral fits: `python -m pip install --upgrade ferre`.
+model files. FERRE is installed automatically as a dependency of ASPCAP
+starting with version 0.2.1. See the [Installation guide](https://aspcap.readthedocs.io/en/latest/installation.html)
+for platform support and verification.
 
 ## Try the worked example
 
-Install Python 3.9 or later and [FERRE](https://github.com/dnidever/ferre).
+Install Python 3.9 or later; installing ASPCAP also installs FERRE.
 The example was verified with FERRE 5.1.3. From the repository checkout, run:
 
 ```sh
