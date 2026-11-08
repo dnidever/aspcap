@@ -36,6 +36,20 @@ class AbundanceTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fewer than two usable pixels"):
             self.fit(self.grid, windows=((15020, 15030),))
 
+    def test_bad_mask_shape(self):
+        with self.assertRaisesRegex(ValueError, 'mask'):
+            self.fit(self.grid, mask=[True])
+
+    def test_real_ferre_mask(self):
+        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
+        if not executable:
+            self.skipTest("FERRE unavailable")
+        result, pixels = self.fit(self.grid, executable=executable,
+                                  mask=[False,False,True,False,False,False,False,False])
+        self.assertEqual(result['pixels_used'],3)
+        self.assertEqual(list(pixels)[2][-1],0)
+        self.assertAlmostEqual(result['raw_value'],.2,delta=.003)
+
     def test_real_ferre(self):
         executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
         if not executable:
