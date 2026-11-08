@@ -52,29 +52,16 @@ For the historical library families, see the
 Compression with PCA
 --------------------
 
-**How it works.** Principal component analysis (PCA) represents the spectra
-using a shared set of basis spectra that describe the main variations across
-the library. Instead of storing every wavelength pixel for every node, store
-the basis once and a shorter coefficient vector for each node. A spectrum is
-approximately reconstructed from a weighted sum of the retained components,
-with any mean spectrum or other preprocessing restored according to the
-library format. FERRE can interpolate the coefficients and reconstruct the
-trial spectrum for comparison with observations.
+PCA stores a shared set of basis spectra and a short coefficient vector for
+each grid node, rather than every wavelength pixel. FERRE interpolates the
+coefficients and reconstructs the model spectrum as needed. DR17 libraries
+achieved nearly tenfold compression; the saving depends on how many components
+are retained.
 
-**Compression savings.** The DR17 library documentation reports a reduction
-of almost an order of magnitude, roughly a factor of ten. The actual saving
-depends on the number of retained components, spectral segmentation, and
-the storage needed for the basis. For illustration, replacing 7,500 flux
-values per node with 750 coefficients reduces the per-node payload by a
-factor of ten before accounting for the shared basis and metadata; these
-numbers are an example, not a specification of every APOGEE library.
-
-**Accuracy and current support.** Truncating the basis introduces reconstruction
-error. Check residuals in weak abundance-sensitive features as well as overall
-flux accuracy, and distinguish PCA error from interpolation error. FERRE
-supports PCA libraries, but the current ASPCAP Grid reader accepts only
-uncompressed libraries. The bundled APOGEE fixtures contain reconstructed
-fluxes, not compressed coefficient grids.
+Discarding components introduces reconstruction error, which should be checked
+in abundance-sensitive features. FERRE supports PCA libraries, but ASPCAP's
+current Grid reader explicitly rejects nonzero ``NPCA`` headers; that wrapper
+restriction must be removed and the input handling extended before using them.
 
 See the `DR17 spectral-library documentation
 <https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_ and :doc:`ferre`.
