@@ -45,12 +45,6 @@ and validated. A single global grid still needs an explicit LSF treatment:
 either pre-convolved versions or a suitable high-resolution grid with FERRE
 performing convolution for each observation.
 
-**Production grid and test fixtures.** This is the planned production library,
-not a claim that the bundled small
-APOGEE fixtures already provide that coverage. Element-specific mini-grids,
-described in :doc:`element-fitting`, are an additional abundance-fitting
-resource and do not change the goal of one global giant-star grid.
-
 For the historical library families, see the
 `DR17 spectral-library documentation
 <https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_.
