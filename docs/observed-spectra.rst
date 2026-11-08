@@ -1,8 +1,7 @@
 Observed Spectra
 ================
 
-The supported input product for this ASPCAP workflow is **apStar** (asStar
-for APOGEE-South). You can fit either the **combined spectrum** or the
+The supported input product for this ASPCAP workflow is **apStar**. You can fit either the **combined spectrum** or the
 **individual visit spectra stored in the same file**. Both are already on the
 common, stellar rest-frame wavelength grid.
 
