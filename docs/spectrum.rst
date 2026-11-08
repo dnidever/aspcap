@@ -119,7 +119,7 @@ API
    :members:
 
 Grid evaluation and fitting
---------------------------
+---------------------------
 
 ``grid(parameters)`` returns a Spec1D model; a batch returns a list of spectra.
 Use ``as_dict=True`` to request the wave/flux dictionary instead. Model errors
