@@ -102,6 +102,11 @@ result, pixels = grid.fit_abundance(
 Pass the four CSV columns as sequences. `result` is a dictionary and `pixels`
 iterates over the diagnostic rows.
 
+From ASPCAP 0.3.0, `grid(parameters)` returns a `Spec1D` model; batches return lists of
+spectra. Use `as_dict=True` for the earlier wave/flux dictionary.
+`grid.fit(spec, start=...)` accepts a prepared `Spec1D`, using its errors and
+mask and checking its native wavelengths. Separate flux/error arrays still work.
+
 The FERRE protocol lives in `aspcap/ferre.py`, the abundance logic in
 `aspcap/abundances.py`, and file input and output in `aspcap/cli.py`. Run
 `python -m unittest discover -s tests -v` for the tests. Set

@@ -79,12 +79,12 @@ class AbundanceTest(unittest.TestCase):
         grid = Grid(self.grid.path, executable=executable)
         self.assertIn("15 spectra", repr(grid))
         batch = grid([{"ALPHA": 0.2, "METALS": -0.25}, (0.5, 0.0)])
-        self.assertEqual(batch["wave"], grid.wavelengths)
-        self.assertAlmostEqual(batch["flux"][0][1], 1.025, places=5)
-        self.assertAlmostEqual(batch["flux"][1][3], 0.7, places=5)
+        self.assertEqual(tuple(batch[0].wave), grid.wavelengths)
+        self.assertAlmostEqual(batch[0].flux[1], 1.025, places=5)
+        self.assertAlmostEqual(batch[1].flux[3], 0.7, places=5)
         self.assertAlmostEqual(grid.model([15002.5], 0.2, -0.25)[0], 0.82, places=5)
 
-        flux = list(grid((0.2, -0.15))["flux"])
+        flux = list(grid((0.2, -0.15)).flux)
         flux[3] -= 0.001
         flux[4] += 0.001
         fit = grid.fit(flux, [0.01] * grid.npix)

@@ -12,6 +12,10 @@ from os import PathLike
 import subprocess
 import tempfile
 
+import numpy as np
+
+from .spectrum import Spec1D
+
 from ._grid_headers import read_library, Segment
 
 
@@ -271,7 +275,7 @@ class Grid:
                 return False
         if check_model:
             try:
-                self(point)
+                self(point, as_dict=True)
             except RuntimeError as error:
                 if "FERRE returned an invalid model" in str(error):
                     return False
@@ -305,7 +309,7 @@ class Grid:
             self._sample(value)
         return wave
 
-    def __call__(self, pars, wave=None):
+    def __call__(self, pars, wave=None, *, as_dict=False):
         """Interpolate one model or a batch of models in a single FERRE run.
 
         Parameters
@@ -318,13 +322,19 @@ class Grid:
             Output wavelengths within the native range, in the library's
             units and frame. Overrides outwave for this call. If neither is
             supplied, use the native pixels.
+        as_dict : bool, optional
+            Return the legacy wave/flux dictionary instead of Spec1D objects.
+            Defaults to False.
 
         Returns
         -------
-        dict
-            The wave entry is a wavelength tuple. The flux entry is one flux
-            tuple for a single model or a tuple of flux tuples in batch order,
-            including for a one-row batch. Flux is on the library's scale.
+        Spec1D, list of Spec1D, or dict
+            A single model returns Spec1D; a batch returns a list of independent
+            objects, including a one-row batch. Wavelengths and model flux are
+            one-dimensional in native segment order unless output sampling was
+            requested. No errors are invented. With as_dict=True, wave is a
+            tuple and flux is one tuple or a tuple of spectra for a batch.
+            All flux remains on the library's scale.
 
         Notes
         -----
@@ -362,7 +372,23 @@ class Grid:
                 tuple(model[i] + t * (model[j] - model[i]) for i, j, t in samples)
                 for model in models
             )
-        return {"wave": output_wave, "flux": models if batch else models[0]}
+        if as_dict:
+            return {"wave": output_wave, "flux": models if batch else models[0]}
+        spectra = []
+        for parameters, values in zip(rows, models):
+            spectrum = Spec1D(
+                values,
+                wave=output_wave,
+                wavevac=self.vacuum,
+                numpix=[len(output_wave)],
+                metadata={
+                    "parameters": dict(zip(self.labels, parameters)),
+                    "grid_paths": [str(path) for path in self.paths],
+                    "pca_reconstructed": self.compressed,
+                },
+            )
+            spectra.append(spectrum)
+        return spectra if batch else spectra[0]
 
     def model(self, wave, *pars):
         """Evaluate one model and return its flux tuple.
@@ -380,12 +406,12 @@ class Grid:
             Model flux at the requested wavelengths. The wavelength-first
             signature is suitable for optimizers such as scipy.optimize.curve_fit.
         """
-        return self(pars, wave=wave)["flux"]
+        return self(pars, wave=wave, as_dict=True)["flux"]
 
     def fit(
         self,
         flux,
-        error,
+        error=None,
         start=None,
         *,
         free_labels=None,
@@ -398,11 +424,18 @@ class Grid:
 
         Parameters
         ----------
-        flux, error : sequence of float
-            Observed flux and one-sigma uncertainties, in native pixel order
-            and on the library's flux scale. Each sequence must have npix
-            entries. Weighted pixels require finite flux and positive finite
-            errors. The fit does not apply wavelength or continuum corrections.
+        flux : Spec1D or sequence of float
+            Prepared observation on the library's flux scale. Spec1D inputs
+            supply wavelengths, errors, and bad-pixel masks. Saved native pixel
+            mappings are restored; otherwise orders concatenate in order, with
+            padding removed. Wavelengths must match the native grid. This
+            method applies no resampling, velocity, LSF, or continuum correction.
+        error : sequence of float, optional
+            One-sigma uncertainties in native pixel order. Required for array
+            input; defaults to spec.err for Spec1D input. An explicit native
+            error vector overrides the object's errors, retaining its mask.
+            Invalid Spec1D flux/errors are masked automatically. Array inputs
+            require finite flux and positive finite errors on weighted pixels.
         start : mapping or sequence of float, optional
             Full starting parameters keyed by label or in grid-label order.
             Defaults to the midpoint of each axis. Values for frozen labels
@@ -435,6 +468,64 @@ class Grid:
             FERRE failed or returned invalid fit output. The run directory
             is retained and included in the error message.
         """
+        if isinstance(flux, Spec1D):
+            spectrum = (
+                flux.to_native() if flux._native_indices is not None else flux.flatten()
+            )
+            if spectrum.wave is None:
+                raise ValueError("Spec1D fitting requires wavelengths")
+            if (
+                self.vacuum is None
+                or spectrum.wavevac is None
+                or spectrum.wavevac != self.vacuum
+            ):
+                raise ValueError(
+                    "Spec1D wavelength frame must match the grid's common air/vacuum frame"
+                )
+            unit = str(spectrum.wave_unit).strip().lower()
+            if unit not in ("angstrom", "angstroms", "aa", "å"):
+                raise ValueError(
+                    "Spec1D wavelengths must use Angstrom units; convert explicitly"
+                )
+            native = np.asarray(self.wavelengths)
+            tolerance = np.maximum(1e-6, np.abs(native) * 1e-10)
+            if len(spectrum.wave) != self.npix or not np.all(
+                np.isfinite(spectrum.wave)
+                & (np.abs(spectrum.wave - native) <= tolerance)
+            ):
+                raise ValueError(
+                    "Spec1D wavelengths must match the native grid; no resampling is applied"
+                )
+            error = spectrum.err if error is None else np.asarray(error, dtype=float)
+            if error is None:
+                raise ValueError(
+                    "Spec1D has no uncertainties; supply spec.err or an explicit error vector"
+                )
+            error = np.asarray(error, dtype=float)
+            if error.shape != (self.npix,):
+                raise ValueError(
+                    "Spec1D fitting errors must have one value per native pixel"
+                )
+            valid = (
+                ~spectrum.mask
+                & np.isfinite(spectrum.flux)
+                & np.isfinite(error)
+                & (error > 0)
+            )
+            if weights is None:
+                weights = np.ones(self.npix)
+            else:
+                weights = np.asarray(weights, dtype=float)
+                if weights.shape != (self.npix,) or not np.all(
+                    np.isfinite(weights) & (weights >= 0)
+                ):
+                    raise ValueError(
+                        "Weights must be finite and nonnegative with one entry per native pixel"
+                    )
+            weights = np.where(valid, weights, 0.0)
+            flux = spectrum.flux
+        elif error is None:
+            raise ValueError("Supply one-sigma errors with array flux input")
         if start is None:
             start = tuple((lo + hi) / 2 for lo, hi in self.ranges)
         start = self._parameters(start)

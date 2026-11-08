@@ -117,3 +117,12 @@ API
 
 .. autoclass:: aspcap.spectrum.Spec1D
    :members:
+
+Grid evaluation and fitting
+--------------------------
+
+``grid(parameters)`` returns a Spec1D model; a batch returns a list of spectra.
+Use ``as_dict=True`` to request the wave/flux dictionary instead. Model errors
+are absent until supplied explicitly. ``grid.fit(spec, start=...)`` accepts a
+prepared Spec1D observation, using its errors and mask while validating its
+native wavelengths and frame. See :doc:`grid` for examples and order mapping.

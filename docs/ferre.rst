@@ -190,8 +190,9 @@ must be consistent when comparing fit statistics.
 What ASPCAP currently exposes
 -----------------------------
 
-The current ``Grid`` interface evaluates models and fits selected labels with
-errors and weights. Its FERRE calls request ``INTER=1``, ``WINTER=0``,
+The current ``Grid`` interface returns model Spec1D objects by default
+(``as_dict=True`` requests a dictionary) and fits selected labels from Spec1D
+observations or explicit flux/error arrays, with errors and weights. Its FERRE calls request ``INTER=1``, ``WINTER=0``,
 ``CONT=0``, ``OBSCONT=0``, ``INIT=0``, and ``NRUNS=1``. They do not currently
 write the LSF inputs or expose the internal continuum and resampling controls.
 

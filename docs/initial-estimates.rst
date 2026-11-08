@@ -31,7 +31,7 @@ initialization strategy.
    from aspcap import Grid
 
    grid = Grid("examples/toy-grid.dat")
-   flux = grid({"ALPHA": 0.20, "METALS": -0.15})["flux"]
+   flux = grid({"ALPHA": 0.20, "METALS": -0.15}).flux
    error = [0.01] * grid.npix
    fit = grid.fit(
        flux, error,

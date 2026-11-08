@@ -41,8 +41,10 @@ using the same units and air/vacuum convention. Normalize observations and model
 consistently; see :doc:`continuum`. Supply the normalized one-sigma errors along
 with the flux. Exclude gaps and bad pixels using zero weights.
 
-``Grid.fit`` takes flux and error arrays, not a ``Spec1D`` object. For multiple
-orders, use the explicit native-grid mapping described in :doc:`spectrum`.
+``Grid.fit`` accepts either a ``Spec1D`` object or separate flux/error arrays.
+With Spec1D, its errors and mask are used automatically and its wavelengths
+are checked against the grid. Saved native mappings restore detector gaps;
+otherwise orders concatenate without padding. See :doc:`spectrum`.
 Neither the fit nor the mapping applies a radial-velocity correction or an LSF
 convolution. The fit does not estimate a continuum.
 
@@ -53,14 +55,15 @@ From the repository checkout:
 
 .. code-block:: python
 
+   import numpy as np
    from aspcap import Grid
 
    grid = Grid("examples/toy-grid.dat")
    truth = {"ALPHA": 0.20, "METALS": -0.15}
-   flux = grid(truth)["flux"]
-   error = [0.01] * grid.npix
+   spec = grid(truth)
+   spec.err = np.full(grid.npix, 0.01)
    fit = grid.fit(
-       flux, error,
+       spec,
        start={"ALPHA": 0.0, "METALS": -0.25},
        free_labels=("ALPHA", "METALS"),
        weights=[1.0] * grid.npix,

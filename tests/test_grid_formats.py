@@ -83,7 +83,7 @@ class GridFormatsTest(unittest.TestCase):
             if direct:
                 grid = Grid(grid.path, executable=self.exe, f_access=1)
             with self.subTest(binary=binary, direct=direct):
-                model = grid({"X": 0.4})["flux"]
+                model = grid({"X": 0.4}).flux
                 for got, want in zip(model, self.expected(0.4)):
                     self.assertAlmostEqual(got, want, places=5)
                 fit = grid.fit(self.expected(0.4), [0.01] * 8, start={"X": 0.8})
@@ -104,17 +104,17 @@ class GridFormatsTest(unittest.TestCase):
                 )
                 self.assertAlmostEqual(result["abundance"], 0.4, places=3)
                 # All-zero raw coefficients relative to CONSTANT reconstruct the mean.
-                for got in grid({"X": 0})["flux"]:
+                for got in grid({"X": 0}).flux:
                     self.assertAlmostEqual(got, 0.8, places=5)
 
     def test_multi_transposed_and_no_interpolation_across_gaps(self):
         self.require_ferre()
         for binary in (False, True):
             grid = self.library(binary=binary, transposed=True)
-            flux = grid({"X": 0.3})["flux"]
+            flux = grid({"X": 0.3}).flux
             for got, want in zip(flux, self.expected(0.3)):
                 self.assertAlmostEqual(got, want, places=5)
-            self.assertEqual(len(grid({"X": 0.3}, wave=[16001, 15000.5])["flux"]), 2)
+            self.assertEqual(len(grid({"X": 0.3}, wave=[16001, 15000.5]).flux), 2)
             with self.assertRaisesRegex(ValueError, "gap"):
                 grid({"X": 0.3}, wave=[15500])
 
@@ -124,7 +124,7 @@ class GridFormatsTest(unittest.TestCase):
         other = self.root / "other.dat"
         shutil.copy(a.path, other)
         joined = Grid([a.path, other], executable=self.exe)
-        self.assertEqual(len(joined({"X": 0.4})["flux"]), 16)
+        self.assertEqual(len(joined({"X": 0.4}).flux), 16)
         h = self.root / "formatted.hdr"
         h.write_text(a.path.read_text().split("/\n", 1)[0] + "/\n")
         rows = [self.expected(x) for x in range(3)]
@@ -133,7 +133,7 @@ class GridFormatsTest(unittest.TestCase):
         )
         formatted = Grid(h, executable=self.exe)
         self.assertEqual((formatted.f_format, formatted.f_access), (0, 1))
-        for got, want in zip(formatted({"X": 0.4})["flux"], self.expected(0.4)):
+        for got, want in zip(formatted({"X": 0.4}).flux, self.expected(0.4)):
             self.assertAlmostEqual(got, want, places=5)
 
     def test_sparse_sidecar_nonuniform_axes_and_invalid_region(self):
@@ -155,7 +155,7 @@ class GridFormatsTest(unittest.TestCase):
         self.assertTrue(grid.sparse)
         self.assertEqual(grid.nspectra, 5)
         self.assertEqual(grid.axis_values[0], (3000, 3100, 3300))
-        out = grid({"T": 3050, "G": 0.5})["flux"]
+        out = grid({"T": 3050, "G": 0.5}).flux
         self.assertAlmostEqual(out[0], 1.005, places=5)
         self.assertAlmostEqual(out[1], 0.85, places=5)
         fit = grid.fit(out, [0.01] * 8, start={"T": 3040, "G": 0.4})
@@ -183,7 +183,7 @@ class GridFormatsTest(unittest.TestCase):
             grid.path.read_text().replace("RESOLUTION=22500", "RESOLUTION=0")
         )
         photo = Grid(grid.path, executable=self.exe)
-        self.assertEqual(len(photo({"X": 0.4})["flux"]), 8)
+        self.assertEqual(len(photo({"X": 0.4}).flux), 8)
         path = self.root / "singleton.dat"
         path.write_text(
             "&SYNTH N_OF_DIM=2,LABEL(1)='X',LABEL(2)='FIXED',"
@@ -194,7 +194,7 @@ class GridFormatsTest(unittest.TestCase):
         sparse = Grid(path, executable=self.exe)
         self.assertEqual(sparse.counts, (2, 1))
         self.assertAlmostEqual(
-            sparse({"X": 0.5, "FIXED": 42})["flux"][1], 0.9, places=5
+            sparse({"X": 0.5, "FIXED": 42}).flux[1], 0.9, places=5
         )
         fit = sparse.fit(
             [1, 0.9, 1, 1], [0.01] * 4, start={"X": 0.4, "FIXED": 42}, free_labels="X"

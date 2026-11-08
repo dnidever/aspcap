@@ -208,14 +208,18 @@ evaluate a batch with one FERRE invocation.
 .. code-block:: python
 
    model = grid({"ALPHA": 0.20, "METALS": -0.25})
-   wavelengths, flux = model["wave"], model["flux"]
+   wavelengths, flux = model.wave, model.flux
 
    batch = grid([(0.20, -0.25), (0.00, -0.25)])
-   first_flux, second_flux = batch["flux"]
+   first_flux, second_flux = batch[0].flux, batch[1].flux
 
    resampled = grid((0.20, -0.25), wave=[15002.5, 15004.5])
    flux_only = grid.model([15002.5, 15004.5], 0.20, -0.25)
 
+From ASPCAP 0.3.0, a single call returns Spec1D; a batch returns a list of independent Spec1D
+objects. Use ``grid(parameters, as_dict=True)`` for the previous wave/flux
+dictionary. Model arrays are one-dimensional in native segment order, with
+parameter and library provenance in ``metadata`` and no invented errors.
 The returned flux stays on the library's scale; PCA arrays are reconstructed
 by FERRE before return. Output wavelengths must use
 the same units and air or vacuum convention as the library and fall within
@@ -236,7 +240,7 @@ both labels from the default grid midpoint.
 
 .. code-block:: python
 
-   observed = list(grid((0.20, -0.15))["flux"])
+   observed = list(grid((0.20, -0.15)).flux)
    observed[3] -= 0.001
    observed[4] += 0.001
    error = [0.01] * grid.npix
@@ -246,6 +250,23 @@ both labels from the default grid midpoint.
    print(fit.errors)
    print(fit.reduced_chi2)
    best_fit_flux = fit.model
+
+You can also pass a prepared ``Spec1D`` directly:
+
+.. code-block:: python
+
+   from aspcap import Spec1D
+
+   spec = Spec1D(observed, wave=grid.wavelengths, err=error, wavevac=grid.vacuum)
+   fit = grid.fit(spec)
+
+Its errors and mask are used automatically. An explicit native error vector
+can override ``spec.err``. Saved native mappings restore gaps; otherwise orders
+concatenate with padding removed. Wavelengths, Angstrom units, and the air/vacuum
+frame must match the library. No normalization or resampling is applied, and
+the input object is left unchanged. Extra weights use native pixel order and
+are combined with the spectrum's mask. Grids with mixed wavelength frames or
+photometric entries can still be handled through explicit flux/error arrays.
 
 To freeze a label, give its value in the full starting vector and list only
 the labels FERRE should vary. A zero weight excludes a pixel. For example,
@@ -304,7 +325,7 @@ for your observation.
    )
 
    truth = {"METALS": -0.32, "LOGG": 1.14, "TEFF": 3625}
-   observed = list(grid(truth)["flux"])
+   observed = list(grid(truth).flux)
    observed[600] += 0.0001
    observed[4200] -= 0.0001
    fit = grid.fit(observed, [0.003] * grid.npix, weights=weights)
@@ -340,7 +361,7 @@ midpoints.
    grid = Grid("examples/apogee-dr17-mgiant-mini.dat")
    print(grid)
    truth = {"METALS": -0.32, "LOGG": 1.14, "TEFF": 3625}
-   observed = list(grid(truth)["flux"])
+   observed = list(grid(truth).flux)
    observed[60] += 0.0001
    observed[90] -= 0.0001
 

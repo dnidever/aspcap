@@ -51,9 +51,10 @@ class Spec1D:
     numpix : sequence of int, optional
         Valid extent of each order in rectangular input. If omitted, trailing
         invalid wavelengths are treated as padding; interior defects stay masked.
-    wavevac : bool, optional
+    wavevac : bool or None, optional
         Whether wavelengths are in vacuum. This is metadata; assigning it does
-        not convert the coordinates. Units/frame conversion is explicitly external.
+        not convert the coordinates. None denotes an unknown or mixed frame.
+        Units/frame conversion is explicitly external.
     wave_unit, flux_unit : object, optional
         Unit metadata; numerical arrays are not converted automatically.
     head, instrument, filename, metadata, lsf : optional
@@ -144,7 +145,7 @@ class Spec1D:
             self.mask |= ~np.isfinite(self.err) | (self.err <= 0)
         for i, count in enumerate(self.numpix):
             self._column(self.mask, i)[count:] = True
-        self.wavevac = bool(wavevac)
+        self.wavevac = None if wavevac is None else bool(wavevac)
         self.wave_unit, self.flux_unit = wave_unit, flux_unit
         self.head, self.instrument, self.filename = deepcopy(head), instrument, filename
         self.metadata, self.lsf = deepcopy(metadata or {}), deepcopy(lsf)
