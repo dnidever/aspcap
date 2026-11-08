@@ -15,6 +15,41 @@ between nodes to evaluate trial models during a fit. The labels and their
 abundance conventions belong to the library; the wrapper does not infer them
 from a stellar type or element name.
 
+Historical grid families and the HGE plan
+--------------------------------------------------
+
+Earlier ASPCAP analyses maintained several related libraries. One distinction
+was the stellar parameter range: for example, DR17 ASPCAP used separate GK-giant
+and M-giant grids, alongside grids for dwarfs and hotter stars. GK and M refer
+to stellar temperature regimes, rather than different observed wavelength
+bands; their spectra cover the APOGEE spectral region. Splitting these
+parameter ranges helped keep individual libraries manageable in memory.
+
+Another distinction was instrumental broadening. Versions of a stellar grid
+were pre-convolved with different representative LSFs, allowing the analysis
+to select a library appropriate to the observation. These LSF versions were
+separate from the division into stellar temperature and gravity ranges.
+See :doc:`lsf` for the release-specific LSF groups and the alternative of
+internal, on-the-fly convolution in FERRE.
+
+For HGE, the plan is to use **one global stellar grid covering giants** across
+the required temperature and gravity range, rather than separate GK-giant
+and M-giant global libraries. Its six free labels are temperature, log g,
+metallicity, alpha enhancement, carbon, and nitrogen; microturbulence follows
+a relation with log g. The final coverage and spacing still need to be chosen
+and validated. A single global grid still needs an explicit LSF treatment:
+either pre-convolved versions or a suitable high-resolution grid with FERRE
+performing convolution for each observation.
+
+This is the planned production library, not a claim that the bundled small
+APOGEE fixtures already provide that coverage. Element-specific mini-grids,
+described in :doc:`element-fitting`, are an additional abundance-fitting
+resource and do not change the goal of one global giant-star grid.
+
+For the historical library families, see the
+`DR17 spectral-library documentation
+<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_.
+
 Choosing and preparing a grid
 -----------------------------
 
