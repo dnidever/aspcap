@@ -51,12 +51,12 @@ The inspected versions use three different approaches:
 
 * **QASPCAP — multiple starts.** Configures FERRE's ``INDINI`` and ``NRUNS``
   to search from several starting points.
-  `Source <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
+  `QASPCAP source <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
 
 * **DR17 ASPCAP — coarse-to-fine fitting.** Runs preliminary fits, selects a
   preferred coarse solution, and uses its parameters to initialize the next
   library fit. Library configuration controls the initialization.
-  `Source <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L333-L344>`_.
+  `DR17 ASPCAP source <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L333-L344>`_.
 
 * **Astra — upstream estimates plus refinement.** Starts from ApogeeNet or
   quality-selected Gaia XP estimates, tries suitable grids in a coarse stage,
