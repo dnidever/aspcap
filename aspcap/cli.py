@@ -13,26 +13,41 @@ def _run(args):
     config = json.loads(path.read_text())
     species = json.loads((path.parent / config["species_file"]).read_text())
     grid = Grid.read(path.parent / config["grid"])
+    if grid.vacuum is None:
+        raise ValueError(
+            "The CSV workflow requires segments with a common wavelength frame"
+        )
     expected_frame = "vacuum" if grid.vacuum else "air"
     if config["wavelength_frame"] != expected_frame:
         raise ValueError(f"Grid uses {expected_frame} wavelengths")
     with (path.parent / config["spectrum"]).open(newline="") as file:
         rows = list(csv.DictReader(file))
-    columns = [[float(row[name]) for row in rows]
-               for name in ("wavelength", "flux", "error", "continuum")]
+    columns = [
+        [float(row[name]) for row in rows]
+        for name in ("wavelength", "flux", "error", "continuum")
+    ]
     executable = args.ferre or config.get("ferre", "ferre")
     if not args.ferre and "/" in executable:
         executable = path.parent / executable
     result, pixels = fit_abundance(
-        grid, *columns, config["parameters"], star_id=config["star_id"],
-        species=species["species"], label=species["label"], windows=species["windows"],
-        add_labels=species.get("add_labels", ()), executable=executable,
-        keep_runs=args.keep_runs, run_root=args.run_root,
+        grid,
+        *columns,
+        config["parameters"],
+        star_id=config["star_id"],
+        species=species["species"],
+        label=species["label"],
+        windows=species["windows"],
+        add_labels=species.get("add_labels", ()),
+        executable=executable,
+        keep_runs=args.keep_runs,
+        run_root=args.run_root,
     )
     if args.pixels:
         with args.pixels.open("w", newline="") as file:
             writer = csv.writer(file)
-            writer.writerow(("wavelength", "normalized_flux", "normalized_error", "model", "weight"))
+            writer.writerow(
+                ("wavelength", "normalized_flux", "normalized_error", "model", "weight")
+            )
             writer.writerows(pixels)
     with args.output.open("w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=result)
@@ -48,9 +63,13 @@ def main():
     abundances.add_argument("config", type=Path)
     abundances.add_argument("--ferre", help="FERRE executable name or path")
     abundances.add_argument("--output", type=Path, default=Path("abundance.csv"))
-    abundances.add_argument("--pixels", type=Path, help="save normalized data, model, and weights")
+    abundances.add_argument(
+        "--pixels", type=Path, help="save normalized data, model, and weights"
+    )
     abundances.add_argument("--keep-runs", action="store_true")
-    abundances.add_argument("--run-root", type=Path, help="existing directory for FERRE run files")
+    abundances.add_argument(
+        "--run-root", type=Path, help="existing directory for FERRE run files"
+    )
     args = parser.parse_args()
     try:
         if args.pixels and args.pixels.resolve() == args.output.resolve():

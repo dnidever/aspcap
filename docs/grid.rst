@@ -59,9 +59,9 @@ achieved nearly tenfold compression; the saving depends on how many components
 are retained.
 
 Discarding components introduces reconstruction error, which should be checked
-in abundance-sensitive features. FERRE supports PCA libraries, but ASPCAP's
-current Grid reader explicitly rejects nonzero ``NPCA`` headers; that wrapper
-restriction must be removed and the input handling extended before using them.
+in abundance-sensitive features. ASPCAP passes PCA libraries directly to FERRE
+for interpolation and reconstruction; ``grid.npix`` and returned flux arrays
+refer to the reconstructed spectrum, not the coefficient vector.
 
 See the `DR17 spectral-library documentation
 <https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_ and :doc:`ferre`.
@@ -85,25 +85,59 @@ abundance dimension; their intended use is described in :doc:`element-fitting`.
 Supported file formats and limits
 ---------------------------------
 
-The current ASPCAP reader supports a regular Cartesian grid with constant
-positive steps in each label dimension, a single wavelength segment, a positive
-header resolution, and uncompressed spectra. Use either an ASCII library
-containing its header and spectra, or a ``.hdr`` header beside a matching
-``.unf`` binary file. The binary file must match the FERRE build's precision
-and byte order; the bundled fixture uses little-endian 32-bit floats.
+Starting with ASPCAP 0.2.2, ``Grid`` reads header geometry and passes the original library paths directly
+to FERRE. It accepts PCA-compressed and uncompressed libraries, multiple spectral
+segments, transposed storage, regular axes, and sparse/nonuniform ``NODEFILE``
+coordinate tables. FERRE remains responsible for reading the spectral payload,
+reconstructing PCA models, and checking the combinations supported by the
+installed executable.
 
-Required header information includes the dimension count, ordered labels,
-``LLIMITS``, ``STEPS``, ``N_P``, ``NPIX``, ``WAVE``, ``LOGW``, ``VACUUM``, and
-``RESOLUTION``. Axis values are lower bound plus integer index times step.
-``LOGW=0`` gives linear wavelengths and ``LOGW=1`` base-ten logarithmic
-wavelengths. ``VACUUM`` declares the wavelength convention; it does not convert
-the observation. Reading the header does not validate every stored spectrum.
+Use an ASCII library, a ``.hdr`` with its ``.unf`` payload, or a formatted
+``.hdr``/``.fmt`` pair. Keep the original PCA basis records in the header and
+coordinate sidecars beside their library. You may also pass a sequence of paths
+to supply separate FERRE ``SYNTHFILE`` modules with matching label axes.
+No Python conversion or decompression of the stored spectra is performed.
 
-PCA-compressed libraries, multiple spectral segments, and sparse/nonuniform
-coordinate-table grids are not exposed by this ASPCAP reader. The separate
-FERRE package's support for additional formats does not automatically extend
-this wrapper. The small packaged grids are demonstration fixtures, not a
-complete production library for all six HGE labels.
+.. code-block:: python
+
+   grid = Grid("/path/to/compressed-library.hdr")
+   print(grid.compressed, grid.npix)
+   print(grid.segments)
+   model = grid(parameters)  # reconstructed flux in native segment order
+
+   # Separate modules sharing the same stellar labels and axes:
+   grid = Grid(["/path/to/blue.hdr", "/path/to/red.hdr"])
+
+   # Explicit FERRE storage/access settings when needed:
+   grid = Grid("/path/to/library.hdr", f_format=1, f_access=1)
+
+``f_format`` is FERRE's ``F_FORMAT`` (0 ASCII/formatted, 1 binary), and
+``f_access`` is ``F_ACCESS`` (0 memory, 1 direct disk access). They are inferred
+for conventional suffixes; a header with only a matching ``.fmt`` defaults to
+formatted direct access. Mixed modules use common format/access controls,
+as required by FERRE. Binary precision and byte order must match the executable.
+
+``grid.wavelengths`` concatenates reconstructed pixels in file/segment order.
+``grid.segments`` exposes each segment's start and exclusive stop indices,
+wavelengths, resolution, and air/vacuum convention. ``grid.stored_npix`` records
+the stored width for each supplied module, which can be a PCA coefficient count.
+Zero-resolution photometric modules retain FERRE's zero-wavelength convention.
+Model-output resampling is restricted to real spectral segments and does not
+interpolate across detector gaps or photometric entries.
+
+For regular axes, the header gives ``LLIMITS``, ``STEPS``, and ``N_P``.
+For sparse grids, ``NODEFILE`` supplies coordinates; ``grid.axis_values`` exposes
+the actual sorted values and ``grid.nspectra`` counts stored rows. ``grid.step``
+is the mean spacing for an uneven axis, not a claim of uniform sampling.
+Missing regions and invalid nodes follow the installed FERRE engine's rules.
+Label bounds alone do not guarantee that a sparse interpolation stencil exists.
+
+``LOGW=0``, 1, and 2 describe linear, base-ten logarithmic, and natural-log
+wavelengths respectively. Metadata inspection does not validate the entire
+payload or guarantee that a particular FERRE build supports every storage,
+interpolation, and access combination. Engine errors retain the run files and
+log for diagnosis. The small packaged grids remain examples rather than a
+complete six-label production library.
 
 Interpolation and accuracy
 --------------------------
@@ -119,9 +153,9 @@ calculated spectra between nodes. Reproducing spectra generated by the same
 interpolator tests software consistency, not interpolation accuracy. Start with
 one-label tests at several stellar parameters, then test interacting labels
 and representative multidimensional patches. Examine spectral residuals and
-biases in recovered parameters and abundances. Missing spectra and excluded
-regions require explicit format and validity support; zero-filled nodes should
-not be assumed to create exclusion boundaries in this wrapper.
+biases in recovered parameters and abundances. For sparse libraries,
+FERRE validates missing nodes and excluded regions; inspect invalid-stencil
+failures rather than treating them as usable spectra.
 
 Open and inspect a library
 --------------------------
@@ -159,7 +193,8 @@ evaluate a batch with one FERRE invocation.
    resampled = grid((0.20, -0.25), wave=[15002.5, 15004.5])
    flux_only = grid.model([15002.5, 15004.5], 0.20, -0.25)
 
-The returned flux stays on the library's scale. Output wavelengths must use
+The returned flux stays on the library's scale; PCA arrays are reconstructed
+by FERRE before return. Output wavelengths must use
 the same units and air or vacuum convention as the library and fall within
 its coverage. For repeated evaluation at the same wavelengths, pass
 ``outwave`` when opening the grid. ``model(wave, *pars)`` provides a

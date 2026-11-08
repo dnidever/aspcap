@@ -1,25 +1,26 @@
 """Load, interpolate, and fit a synthetic spectral library with FERRE."""
 
-
 from __future__ import annotations
 from bisect import bisect_left
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from math import isfinite, prod
+from math import isfinite
 from pathlib import Path
-import re
 import shutil
+from os import PathLike
 import subprocess
 import tempfile
+
+from ._grid_headers import read_library, Segment
 
 
 class Grid:
     """Inspect, interpolate, and fit a synthetic spectral library with FERRE.
 
     The header is read when the grid is opened. FERRE is invoked only when
-    evaluating models or fitting spectra. Supported libraries have a single
-    segment, positive spectral resolution, and uncompressed spectra.
-    Evaluation and fitting require at least two points on every label axis.
+    evaluating models or fitting spectra. Libraries may contain PCA coefficients, multiple spectral segments,
+    transposed records, or sparse coordinate tables. FERRE handles their
+    payloads; this class exposes native output geometry and label bounds.
 
     Attributes
     ----------
@@ -35,126 +36,155 @@ class Grid:
         Native wavelength pixels in the library's wavelength units.
         Logarithmically sampled headers are converted to physical wavelengths.
     vacuum, binary : bool
-        Whether wavelengths are in vacuum and whether library data are binary.
+        Common wavelength convention (None for mixed segments), and whether
+        F_FORMAT selects binary data.
     resolution : float
-        Spectral resolution recorded in the header.
+        Header resolution, or a tuple for segments with differing resolutions.
     nlabels, nspectra, npix : int
-        Number of axes, product of the axis sizes, and native pixel count.
+        Number of labels, stored spectra (including sparse grids), and native
+        reconstructed output pixels.
     outwave : tuple of float or None
         Default output sampling for model evaluation.
+    segments : tuple of Segment
+        Native segment slices, wavelengths, frame, and resolution.
+    axis_values : tuple of tuple of float
+        Physical label coordinates, including nonuniform sparse axes.
+    compressed, sparse : bool
+        Whether a supplied library has PCA coefficients or a NODEFILE.
+    paths : tuple of pathlib.Path
+        Original library paths, passed directly to FERRE.
     executable : str or path-like
         FERRE executable used for evaluation and fitting.
     """
 
-    def __init__(self, path, outwave=None, *, executable="ferre"):
-        """Open a library and validate its metadata.
+    def __init__(
+        self, path, outwave=None, *, executable="ferre", f_format=None, f_access=None
+    ):
+        """Open one FERRE library or an ordered sequence of spectral modules.
 
         Parameters
         ----------
-        path : str or path-like
-            ASCII library path, or a binary library's .hdr path. The binary
-            data must be in a sibling .unf file with the same stem.
+        path : path-like or sequence of path-like
+            ASCII library, .hdr header, or .unf/.fmt payload path. A sequence
+            supplies SYNTHFILE(1), SYNTHFILE(2), ... to FERRE. Keep headers,
+            PCA basis records, and coordinate sidecars in their original layout.
         outwave : sequence of float, optional
-            Default output wavelengths for evaluation. Values must lie
-            within the native wavelength range and use its units and frame.
-        executable : str or path-like, optional
-            Executable name on PATH or a path to a FERRE executable. Defaults
-            to ferre. It is resolved when a run starts.
+            Default model-output wavelengths. Each value must lie in an actual
+            spectral segment; resampling never bridges gaps between segments.
+        executable : path-like, optional
+            FERRE executable; resolved when evaluating or fitting.
+        f_format : int, optional
+            FERRE F_FORMAT (0 ASCII/formatted, 1 unformatted binary). Inferred
+            from .hdr/.unf/.fmt when omitted. Applies to every supplied module.
+        f_access : int, optional
+            FERRE F_ACCESS (0 memory, 1 direct disk access). Defaults to memory,
+            except .fmt pairs use formatted direct access. FERRE validates the
+            combinations supported by the installed engine.
 
-        Raises
-        ------
-        OSError
-            The library header cannot be opened.
-        ValueError
-            The header or wavelength selection is invalid or unsupported,
-            or the binary data file is missing.
+        Notes
+        -----
+        PCA reconstruction, transposed payloads, and library validity are handled
+        by FERRE. Python reads headers and NODEFILE coordinates for metadata;
+        it does not decode the spectral payload. Output arrays always contain
+        reconstructed native flux pixels, not PCA coefficients.
         """
-        path = Path(path).resolve()
-        binary = path.suffix == ".hdr"
-        if binary and not path.with_suffix(".unf").is_file():
-            raise ValueError(f"Missing binary grid data: {path.with_suffix('.unf')}")
-        with path.open("rb") as file:
-            lines = []
-            for raw in file:
-                line = raw.decode("ascii").split("!", 1)[0].strip()
-                if line == "/":
-                    break
-                lines.append(line)
-            else:
-                raise ValueError(f"Unterminated FERRE header: {path}")
-            if file.peek(256).lstrip().startswith(b"&"):
-                raise ValueError("Only single-segment FERRE libraries are supported")
-        header = " ".join(lines)
-        fields = re.split(r"(\b[A-Za-z_][\w]*(?:\(\s*\d+\s*\))?)\s*=", header)
-        values = {
-            re.sub(r"\s+", "", key).upper(): value.strip().rstrip(",")
-            for key, value in zip(fields[1::2], fields[2::2])
+        supplied = (path,) if isinstance(path, (str, PathLike)) else tuple(path)
+        if not supplied:
+            raise ValueError("Supply at least one FERRE library")
+        libraries = [read_library(item) for item in supplied]
+        first = libraries[0]
+        if any(
+            item["labels"] != first["labels"] or item["axes"] != first["axes"]
+            for item in libraries[1:]
+        ):
+            raise ValueError("Spectral modules must have matching labels and axes")
+        self.paths = tuple(item["path"] for item in libraries)
+        self.path = self.paths[0]
+        self.labels, self.axis_values = first["labels"], first["axes"]
+        self.lower = tuple(axis[0] for axis in self.axis_values)
+        self.counts = tuple(len(axis) for axis in self.axis_values)
+        self.step = tuple(
+            (axis[-1] - axis[0]) / (len(axis) - 1) if len(axis) > 1 else 0.0
+            for axis in self.axis_values
+        )
+        self.ranges = tuple((axis[0], axis[-1]) for axis in self.axis_values)
+        self.nspectra = first["nspectra"]
+        self.sparse = any(item["sparse"] for item in libraries)
+        self.compressed = any(item["compressed"] for item in libraries)
+        self.headers = tuple(item["header"] for item in libraries)
+        self.stored_npix = tuple(item["stored_npix"] for item in libraries)
+        self.wavelengths = tuple(w for item in libraries for w in item["wavelengths"])
+        self.segments = []
+        offset = 0
+        for item in libraries:
+            for segment in item["segments"]:
+                self.segments.append(
+                    Segment(
+                        segment.start + offset,
+                        segment.stop + offset,
+                        segment.wavelengths,
+                        segment.vacuum,
+                        segment.resolution,
+                    )
+                )
+            offset += len(item["wavelengths"])
+        self.segments = tuple(self.segments)
+        frames = {segment.vacuum for segment in self.segments}
+        self.vacuum = frames.pop() if len(frames) == 1 else None
+        resolutions = tuple(segment.resolution for segment in self.segments)
+        self.resolution = resolutions[0] if len(set(resolutions)) == 1 else resolutions
+        formats = {
+            int(item.suffix.lower() in (".hdr", ".unf")) for item in map(Path, supplied)
         }
-
-        def numbers(key):
-            return tuple(float(x.replace("D", "E").replace("d", "e"))
-                         for x in values[key].replace(",", " ").split())
-
-        try:
-            ndim = int(values.get("N_OF_DIM", values.get("NDIM", "0")))
-            labels = tuple(values[f"LABEL({i})"].strip("'\042")
-                           for i in range(1, ndim + 1))
-            lower, step = numbers("LLIMITS"), numbers("STEPS")
-            counts = tuple(int(n) for n in numbers("N_P"))
-            start, spacing = numbers("WAVE")
-            npix = int(values["NPIX"])
-            logw = int(values["LOGW"])
-            vacuum = int(values["VACUUM"])
-            resolution, = numbers("RESOLUTION")
-        except (KeyError, ValueError) as error:
-            raise ValueError(f"Invalid or incomplete FERRE header in {path}: {error}") from error
-        if (int(values.get("MULTI", "0")) != 0
-                or ("NPCA" in values and any(numbers("NPCA")))
-                or not isfinite(resolution) or resolution <= 0
-                or logw not in (0, 1) or vacuum not in (0, 1)
-                or not ndim or len(set(labels)) != ndim
-                or not (len(lower) == len(step) == len(counts) == ndim)
-                or not all(isfinite(x) for x in (*lower, *step, start, spacing))
-                or any(n < 1 for n in counts) or any(s <= 0 for s in step)
-                or npix < 2 or spacing <= 0):
-            raise ValueError(f"Unsupported FERRE header in {path}")
-        wave = tuple(start + i * spacing for i in range(npix))
-        if logw:
-            wave = tuple(10**x for x in wave)
-        self.path = path
-        self.labels = labels
-        self.lower = lower
-        self.step = step
-        self.counts = counts
-        self.wavelengths = wave
-        self.vacuum = bool(vacuum)
-        self.binary = binary
-        self.resolution = resolution
+        # Header-only formatted direct-access pairs are also accepted.
+        formatted = all(
+            p.suffix.lower() == ".hdr"
+            and not p.with_suffix(".unf").exists()
+            and p.with_suffix(".fmt").exists()
+            for p in self.paths
+        )
+        if f_format is None:
+            if len(formats) != 1:
+                raise ValueError("Set f_format explicitly for mixed path suffixes")
+            f_format = 0 if formatted else formats.pop()
+        self.f_format = int(f_format)
+        self.f_access = int(
+            f_access
+            if f_access is not None
+            else (formatted or any(Path(p).suffix.lower() == ".fmt" for p in supplied))
+        )
+        self.binary = self.f_format == 1
         self.executable = executable
-        self.nlabels = len(labels)
-        self.npix = len(wave)
-        self.nspectra = prod(counts)
-        self.ranges = tuple((lo, lo + dx * (n - 1))
-                            for lo, dx, n in zip(lower, step, counts))
+        self.nlabels, self.npix = len(self.labels), len(self.wavelengths)
         self.outwave = None if outwave is None else self._output_wave(outwave)
 
     @classmethod
     def read(cls, path, **options):
         """Open a library using the same path and options as the constructor.
 
-        Pass outwave or executable as keyword options. Returns an instance
+        Pass constructor options such as outwave, executable, f_format, or
+        f_access as keywords. Returns an instance
         of the class on which this method is called.
         """
         return cls(path, **options)
 
     def __repr__(self):
         """Show library size, label ranges, and native wavelength coverage."""
-        summary = (f"Grid({str(self.path)!r}, {self.nlabels} labels, "
-                   f"{self.nspectra} spectra, {self.npix} pixels)")
-        axes = [f"  {name}: {lo:g} to {hi:g} (step {step:g}, {count} points)"
-                for name, (lo, hi), step, count
-                in zip(self.labels, self.ranges, self.step, self.counts)]
-        frame = "vacuum" if self.vacuum else "air"
+        summary = (
+            f"Grid({str(self.path)!r}, {self.nlabels} labels, "
+            f"{self.nspectra} spectra, {self.npix} pixels)"
+        )
+        axes = [
+            f"  {name}: {lo:g} to {hi:g} (step {step:g}, {count} points)"
+            for name, (lo, hi), step, count in zip(
+                self.labels, self.ranges, self.step, self.counts
+            )
+        ]
+        frame = (
+            "mixed frames"
+            if self.vacuum is None
+            else ("vacuum" if self.vacuum else "air")
+        )
         wave = f"  Wavelength: {self.wavelengths[0]:g} to {self.wavelengths[-1]:g} ({frame})"
         return "\n".join([summary, *axes, wave])
 
@@ -165,17 +195,39 @@ class Grid:
             pars = [pars[label] for label in self.labels]
         pars = tuple(float(value) for value in pars)
         if len(pars) != self.nlabels:
-            raise ValueError(f"Expected {self.nlabels} parameters in order {self.labels}")
+            raise ValueError(
+                f"Expected {self.nlabels} parameters in order {self.labels}"
+            )
         for label, value, (low, high) in zip(self.labels, pars, self.ranges):
             if not low <= value <= high:
                 raise ValueError(f"Value for {label!r} is outside [{low:g}, {high:g}]")
         return pars
 
+    def _sample(self, value):
+        for segment in self.segments:
+            wave = segment.wavelengths
+            if segment.resolution == 0:
+                continue
+            if wave[0] <= value <= wave[-1]:
+                if len(wave) == 1:
+                    return segment.start, segment.start, 0.0
+                right = max(1, bisect_left(wave, value))
+                left = right - 1
+                return (
+                    segment.start + left,
+                    segment.start + right,
+                    (value - wave[left]) / (wave[right] - wave[left]),
+                )
+        raise ValueError(
+            "Output wavelengths must fall within a spectral segment, not a gap"
+        )
+
     def _output_wave(self, wave):
         wave = tuple(float(value) for value in wave)
-        if not wave or not all(self.wavelengths[0] <= value <= self.wavelengths[-1]
-                               for value in wave):
-            raise ValueError("Output wavelengths must fall within the grid")
+        if not wave or not all(map(isfinite, wave)):
+            raise ValueError("Supply finite output wavelengths")
+        for value in wave:
+            self._sample(value)
         return wave
 
     def __call__(self, pars, wave=None):
@@ -219,7 +271,9 @@ class Grid:
             rows = tuple(pars)
             if not rows:
                 raise ValueError("Supply at least one set of parameters")
-            batch = isinstance(rows[0], Iterable) and not isinstance(rows[0], (str, bytes))
+            batch = isinstance(rows[0], Iterable) and not isinstance(
+                rows[0], (str, bytes)
+            )
             if not batch:
                 rows = (rows,)
         rows = tuple(self._parameters(row) for row in rows)
@@ -228,15 +282,11 @@ class Grid:
             output_wave = self.wavelengths
         models = _execute(self, rows, (), executable=self.executable)
         if output_wave != self.wavelengths:
-            samples = []
-            for value in output_wave:
-                right = max(1, bisect_left(self.wavelengths, value))
-                left = right - 1
-                fraction = ((value - self.wavelengths[left]) /
-                            (self.wavelengths[right] - self.wavelengths[left]))
-                samples.append((left, right, fraction))
-            models = tuple(tuple(model[i] + t * (model[j] - model[i])
-                                 for i, j, t in samples) for model in models)
+            samples = [self._sample(value) for value in output_wave]
+            models = tuple(
+                tuple(model[i] + t * (model[j] - model[i]) for i, j, t in samples)
+                for model in models
+            )
         return {"wave": output_wave, "flux": models if batch else models[0]}
 
     def model(self, wave, *pars):
@@ -257,8 +307,18 @@ class Grid:
         """
         return self(pars, wave=wave)["flux"]
 
-    def fit(self, flux, error, start=None, *, free_labels=None, weights=None,
-            executable=None, keep_runs=False, run_root=None):
+    def fit(
+        self,
+        flux,
+        error,
+        start=None,
+        *,
+        free_labels=None,
+        weights=None,
+        executable=None,
+        keep_runs=False,
+        run_root=None,
+    ):
         """Fit a prepared spectrum on the native grid with FERRE.
 
         Parameters
@@ -320,14 +380,26 @@ class Grid:
             raise ValueError("Weights must be finite and nonnegative")
         if sum(w > 0 for w in weights) <= len(axes):
             raise ValueError("The fit requires more weighted pixels than free labels")
-        if any(w > 0 and not (isfinite(f) and isfinite(e) and e > 0)
-               for f, e, w in zip(flux, error, weights)):
-            raise ValueError("Weighted pixels require finite flux and positive finite error")
+        if any(
+            w > 0 and not (isfinite(f) and isfinite(e) and e > 0)
+            for f, e, w in zip(flux, error, weights)
+        ):
+            raise ValueError(
+                "Weighted pixels require finite flux and positive finite error"
+            )
         flux = tuple(f if w > 0 else 1.0 for f, w in zip(flux, weights))
         error = tuple(e if w > 0 else 1e10 for e, w in zip(error, weights))
-        return _execute(self, (start,), axes, flux=flux, error=error, weights=weights,
-                        executable=self.executable if executable is None else executable,
-                        keep_runs=keep_runs, run_root=run_root)
+        return _execute(
+            self,
+            (start,),
+            axes,
+            flux=flux,
+            error=error,
+            weights=weights,
+            executable=self.executable if executable is None else executable,
+            keep_runs=keep_runs,
+            run_root=run_root,
+        )
 
 
 @dataclass(frozen=True)
@@ -346,30 +418,56 @@ class FerreFit:
     model: tuple[float, ...]
 
 
-def run_ferre(grid, flux, error, start, free_label, weights, *,
-              executable="ferre", keep_runs=False, run_root=None):
+def run_ferre(
+    grid,
+    flux,
+    error,
+    start,
+    free_label,
+    weights,
+    *,
+    executable="ferre",
+    keep_runs=False,
+    run_root=None,
+):
     """Run the abundance workflow's single-label fit on the native grid."""
-    return grid.fit(flux, error, start, free_labels=(free_label,), weights=weights,
-                    executable=executable, keep_runs=keep_runs, run_root=run_root)
+    return grid.fit(
+        flux,
+        error,
+        start,
+        free_labels=(free_label,),
+        weights=weights,
+        executable=executable,
+        keep_runs=keep_runs,
+        run_root=run_root,
+    )
 
 
-def _execute(grid, rows, axes, *, flux=None, error=None, weights=None,
-             executable, keep_runs=False, run_root=None):
+def _execute(
+    grid,
+    rows,
+    axes,
+    *,
+    flux=None,
+    error=None,
+    weights=None,
+    executable,
+    keep_runs=False,
+    run_root=None,
+):
     ndim = grid.nlabels
-    if any(count < 2 for count in grid.counts):
-        raise ValueError("FERRE requires at least two points on every library axis")
     resolved = shutil.which(str(executable))
     if resolved is None:
         raise ValueError(f"FERRE executable not found or not executable: {executable}")
     executable = Path(resolved).resolve()
     directory = Path(tempfile.mkdtemp(prefix="aspcap-", dir=run_root))
-    library = directory / ("grid.hdr" if grid.binary else "grid.dat")
     try:
-        if grid.binary:
-            library.with_suffix(".hdr").symlink_to(grid.path)
-            library.with_suffix(".unf").symlink_to(grid.path.with_suffix(".unf"))
-        else:
-            library.symlink_to(grid.path)
+        # Original absolute paths preserve NODEFILE resolution and PCA sidecars.
+        # No payload is copied, renamed, decoded, or decompressed in Python.
+        synthfiles = "\n".join(
+            f" SYNTHFILE({i})='{str(path).replace(chr(39), chr(39) * 2)}'"
+            for i, path in enumerate(grid.paths, 1)
+        )
 
         def write_row(name, values):
             row = " ".join(f"{x:.12e}" for x in values)
@@ -378,12 +476,15 @@ def _execute(grid, rows, axes, *, flux=None, error=None, weights=None,
         # FERRE uses a half-open normalized interval [0, 1) internally.
         # Nudge exact upper endpoints inwards far enough for its single precision.
         inputs = [
-            " ".join(f"{(hi - 2e-6 * (hi - lo) if value == hi else value):.12e}"
-                     for value, (lo, hi) in zip(row, grid.ranges))
+            " ".join(
+                f"{(hi - 2e-6 * (hi - lo) if value == hi and not grid.sparse else value):.12e}"
+                for value, (lo, hi) in zip(row, grid.ranges)
+            )
             for row in rows
         ]
         (directory / "start.ipf").write_text(
-            "".join(f"star{i} {row}\n" for i, row in enumerate(inputs)), encoding="ascii"
+            "".join(f"star{i} {row}\n" for i, row in enumerate(inputs)),
+            encoding="ascii",
         )
         fit_files = ""
         if axes:
@@ -397,12 +498,16 @@ def _execute(grid, rows, axes, *, flux=None, error=None, weights=None,
  FILTERFILE='weights.dat'
  OPFILE='fit.opf'
 """
-        (directory / "input.nml").write_text(f"""&LISTA
+        (directory / "input.nml").write_text(
+            f"""&LISTA
  NDIM={ndim}
  NOV={len(axes)}
  NOBJ={len(rows)}
- SYNTHFILE(1)='{library.name}'
- F_FORMAT={int(grid.binary)}
+{synthfiles}
+ F_FORMAT={grid.f_format}
+ F_ACCESS={grid.f_access}
+ PCACHI=0
+ PCAPROJECT=0
  INTER=1
  WINTER=0
  ALGOR=1
@@ -417,18 +522,29 @@ def _execute(grid, rows, axes, *, flux=None, error=None, weights=None,
  PFILE='start.ipf'
 {fit_files} OFFILE='model.mdl'
 /
-""", encoding="ascii")
+""",
+            encoding="ascii",
+        )
         with (directory / "ferre.log").open("w") as log:
-            process = subprocess.run([str(executable)], cwd=directory, stdout=log,
-                           stderr=subprocess.STDOUT)
+            process = subprocess.run(
+                [str(executable)], cwd=directory, stdout=log, stderr=subprocess.STDOUT
+            )
         # FERRE 5.1.3 reports a normal completion with STOP 1.
-        if process.returncode and not (process.returncode == 1 and
-                "quit: Run ended" in (directory / "ferre.log").read_text(errors="replace")):
+        if process.returncode and not (
+            process.returncode == 1
+            and "quit: Run ended"
+            in (directory / "ferre.log").read_text(errors="replace")
+        ):
             process.check_returncode()
-        models = tuple(tuple(float(x) for x in line.split())
-                       for line in (directory / "model.mdl").read_text().splitlines())
+        models = tuple(
+            tuple(float(x) for x in line.split())
+            for line in (directory / "model.mdl").read_text().splitlines()
+        )
         if len(models) != len(rows) or any(
-            len(model) != grid.npix or not all(map(isfinite, model)) for model in models
+            len(model) != grid.npix
+            or not all(map(isfinite, model))
+            or all(value == -1000 for value in model)
+            for model in models
         ):
             raise ValueError("FERRE returned an invalid model")
         result = models
@@ -436,21 +552,31 @@ def _execute(grid, rows, axes, *, flux=None, error=None, weights=None,
             fields = (directory / "fit.opf").read_text().split()
             if len(fields) < 2 * ndim + 4 or fields[0] != "star0":
                 raise ValueError("Unexpected FERRE parameter output")
-            params = tuple(float(x) for x in fields[1:ndim + 1])
-            sigma = tuple(float(x) for x in fields[ndim + 1:2 * ndim + 1])
+            params = tuple(float(x) for x in fields[1 : ndim + 1])
+            sigma = tuple(float(x) for x in fields[ndim + 1 : 2 * ndim + 1])
             chi2 = 10 ** float(fields[2 * ndim + 3])
-            if not all(map(isfinite, (*params, chi2))) or any(x == -999.999 for x in params):
+            if not all(map(isfinite, (*params, chi2))) or any(
+                x == -999.999 for x in params
+            ):
                 raise ValueError("FERRE returned an invalid solution")
             for i, label in enumerate(grid.labels):
                 lo, hi = grid.ranges[i]
                 tolerance = max(5e-5 * abs(params[i]), 3e-6 * (hi - lo), 1e-8)
                 if i not in axes and abs(params[i] - rows[0][i]) > tolerance:
                     raise ValueError(f"FERRE changed frozen label {label!r}")
-            result = FerreFit(dict(zip(grid.labels, params)),
-                              {label: x if isfinite(x) and x > 0 else None
-                               for label, x in zip(grid.labels, sigma)}, chi2, models[0])
+            result = FerreFit(
+                dict(zip(grid.labels, params)),
+                {
+                    label: x if isfinite(x) and x > 0 else None
+                    for label, x in zip(grid.labels, sigma)
+                },
+                chi2,
+                models[0],
+            )
     except (OSError, ValueError, subprocess.SubprocessError, OverflowError) as error:
-        raise RuntimeError(f"FERRE fit failed. Run files kept in {directory}. {error}") from error
+        raise RuntimeError(
+            f"FERRE fit failed. Run files kept in {directory}. {error}"
+        ) from error
     if not keep_runs:
         shutil.rmtree(directory)
     return result

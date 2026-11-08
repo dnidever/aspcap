@@ -13,9 +13,10 @@ Run configuration
 
 * ``star_id`` identifies the star in the output.
 * ``grid`` points to a FERRE ASCII library or the ``.hdr`` of a matching
-  ``.hdr`` and ``.unf`` pair. The library must have one segment, a positive
-  spectral resolution, and uncompressed spectra. The fit uses linear
-  interpolation between grid points.
+  ``.hdr`` and ``.unf`` pair. PCA-compressed, multi-segment, transposed, and
+  sparse libraries are also accepted; see :doc:`grid`. The spectrum CSV must
+  contain the reconstructed native pixels, concatenated in segment order,
+  rather than PCA coefficients. The fit uses linear interpolation.
 * ``spectrum`` points to the CSV described below.
 * ``species_file`` points to the element configuration.
 * ``wavelength_frame`` declares the air or vacuum convention and must match

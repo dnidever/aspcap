@@ -77,10 +77,12 @@ location.
    if the fitted coordinate is already `[X/H]`. Verify this mapping and the
    wavelength windows against the scientific conventions of your grid.
 
-This version supports single-segment, non-PCA FERRE libraries with a positive
-spectral resolution, either formatted ASCII or matching `.hdr` and `.unf`
-files. Point `grid` to the ASCII library or to the binary library's `.hdr`.
-The fit uses linear interpolation. The reported error is conditional on the
+The Grid interface accepts FERRE ASCII, binary, and formatted direct-access
+libraries, including PCA compression, multiple spectral segments, transposed
+storage, and sparse coordinate tables. FERRE reads the original payload and
+reconstructs model flux; ASPCAP reads the output geometry from the headers.
+See the [grid guide](https://aspcap.readthedocs.io/en/latest/grid.html) for formats
+and explicit access controls. The fit uses linear interpolation. The reported error is conditional on the
 fixed global parameters and continuum. The reduced χ² column comes from FERRE.
 
 ## Use from Python
