@@ -1,10 +1,18 @@
 ASPCAP for HGE
 ==============
 
-ASPCAP runs FERRE to measure the abundance of one element in a prepared
-stellar spectrum. It uses the parameters and continuum from an existing
-global fit. The element configuration controls which wavelengths contribute
-to the fit and which synthetic-grid label FERRE can vary.
+ASPCAP provides spectral data objects, external continuum normalization, and
+FERRE-based element-abundance fitting for HGE.
+
+Start with :doc:`spectrum` for Spec1D objects, multiple orders, masks, and
+APOGEE chip mapping. See :doc:`continuum` for polynomial, spline, median,
+percentile, and model-ratio estimators, their options, and worked examples.
+These operations are outside FERRE and require no executable or Doppler models.
+
+The abundance workflow runs FERRE on a prepared spectrum using parameters and
+a fixed continuum from a global fit. The element configuration controls which
+wavelengths contribute and which synthetic-grid label FERRE can vary.
+See :doc:`quickstart` for that workflow.
 
 .. toctree::
    :maxdepth: 2

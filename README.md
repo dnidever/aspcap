@@ -1,11 +1,28 @@
 # aspcap
 
-APOGEE ASPCAP abundance software. This first workflow fits one element in one
-prepared spectrum using the stellar parameters and continuum from a global fit.
+ASPCAP provides multi-order spectral data objects, external continuum
+normalization, and element-abundance fitting with FERRE for HGE.
+
+- [Spec1D objects](docs/spectrum.rst): single or multiple orders, unequal chip
+  lengths, masks, uncertainties, copying, and native-grid mapping.
+- [External continuum normalization](docs/continuum.rst): polynomial, spline,
+  median, percentile, and model-ratio methods with diagnostics.
+- [FERRE abundance fitting](docs/quickstart.rst): fit an element using fixed
+  global parameters and a supplied continuum.
+
+Install the current main branch with:
+
+```sh
+python -m pip install 'git+https://github.com/dnidever/aspcap.git@main'
+```
+
+The spectrum and continuum modules do not need a FERRE executable or Doppler
+model files. Install [FERRE](https://github.com/dnidever/ferre) separately when
+running spectral fits: `python -m pip install --upgrade ferre`.
 
 ## Try the worked example
 
-Install Python 3.9 or later and [FERRE](https://github.com/callendeprieto/ferre).
+Install Python 3.9 or later and [FERRE](https://github.com/dnidever/ferre).
 The example was verified with FERRE 5.1.3. From the repository checkout, run:
 
 ```sh
@@ -70,7 +87,8 @@ is outside your PATH.
 
 ## Documentation
 
-The [user guide](docs/index.rst) includes a quickstart, input reference, and
+The [user guide](docs/index.rst) includes a quickstart, input reference,
+[Spec1D guide](docs/spectrum.rst), [continuum methods](docs/continuum.rst), and
 Python API. The repository includes Read the Docs build configuration. To
 preview the guide locally after installing ASPCAP:
 
@@ -81,10 +99,10 @@ python -m sphinx -W -b html docs docs/_build/html
 
 
 The full-wavelength APOGEE DR17 M-giant test grid and detector weights are
-included when you install ASPCAP from this branch.
+included in ASPCAP installations from main.
 
 ```sh
-python -m pip install 'git+https://github.com/dnidever/aspcap.git@hge/first-abundance-fit'
+python -m pip install 'git+https://github.com/dnidever/aspcap.git@main'
 ```
 
 See the [Grid walkthrough](docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
@@ -106,8 +124,21 @@ result = continuum.fit(spec, method="chebyshev", degree=4)
 normalized = result.apply(spec)  # independent copy
 ```
 
-Polynomial, spline, median, binned-percentile and model-ratio methods operate
-independently per order. All normalization here is outside FERRE. Applying a
+Choose the estimator with `continuum.fit(spec, method=...)`:
+
+| Method | Useful options | Defaults |
+|---|---|---|
+| `chebyshev` / `polynomial` | `degree`, `weighted`, `clip` | Degree 4, unweighted, no clipping |
+| `spline` | `degree`, `smoothing`, `weighted`, `clip` | Degree 3, noise-based smoothing |
+| `median` | `window`, `mode` | 151 pixels, mirror edges |
+| `percentile` | `percentile`, `bins` | 90th percentile, 20 bins |
+| `model_ratio` | `model`, `window`, `ratio_bounds`, `mode` | Model required; 151 pixels; ratios 0.1–10 |
+
+Methods operate independently per order. Use `result.fit_mask`, `result.flags`,
+`result.parameters`, and `result.settings` to inspect the estimate. Invalid
+orders raise an error by default; `on_failure="mask"` returns flagged, masked
+results instead. `result.apply(spec)` returns a copy; `inplace=True` updates the
+input explicitly. All normalization here is outside FERRE. Applying a
 continuum rescales both flux and error; it does not include uncertainty in the
 continuum estimate. See [the spectrum guide](docs/spectrum.rst),
 [the continuum guide](docs/continuum.rst), and the runnable
