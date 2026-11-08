@@ -42,6 +42,7 @@ and :doc:`element-fitting` for the individual-element workflow.
 
    quickstart
    installation
+   observed-spectra
    ferre
    grid
    lsf

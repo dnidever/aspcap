@@ -1,6 +1,9 @@
 Multi-order spectra
 ===================
 
+See :doc:`observed-spectra` for apVisit and apStar products, rest-frame
+velocity correction, and choosing the fitting wavelength grid.
+
 ``Spec1D`` is a lightweight spectrum container adapted from David Nidever's
 Doppler design. It requires NumPy, and imports no Cannon, Payne, RV-fitting,
 LSF-model, plotting, or model-download code. SciPy supplies numerical continuum
