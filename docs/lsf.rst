@@ -30,11 +30,18 @@ Convolve every synthetic spectrum with a representative APOGEE LSF when
 building the library, then interpolate and fit that pre-convolved library.
 Separate versions of a grid can represent different instrumental profiles.
 
-Historically, APOGEE used five LSF versions of each grid: one for an average
-LSF and four for different fiber ranges. Thus the five versions were not five
-distinct fiber bins. The appropriate version approximates the instrumental
-profile of the observation. For combined spectra, the survey used mean fiber
-information to select among the fiber-dependent grids.
+For DR13/DR14 specifically, Holtzman et al. (2018) report five versions
+of each grid: one using an average LSF and four using LSFs for fiber ranges
+1–38, 39–150, 151–250, and 251–300. The four ranges were identified by clustering
+LSF widths at representative wavelengths; within each range, LSFs from five
+fibers were averaged to construct that version. Five grid versions, four
+fiber groups, and five fibers averaged per group are different counts.
+
+The DR17 spectral-library documentation describes four fiber-region grids,
+selected using the mean fiber of a combined spectrum. Thus “five pre-convolved
+grids” is a release-specific historical description, not a universal count
+for APOGEE. Check the actual release, telescope, and library set before choosing
+an LSF group.
 
 This approach moves convolution out of the fitting loop, making repeated fits
 less expensive, at the cost of storing several libraries and approximating
@@ -44,23 +51,38 @@ group, telescope, and library provenance with the results.
 See the historical discussion in `Holtzman et al. (2018)
 <https://research.monash.edu/files/255726790/255350468_oa.pdf>`_ and the
 `DR17 spectral-library documentation
-<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_. The latter describes
-four fiber regions; the exact library set and selection rules depend on the
-survey release.
+<https://www.sdss4.org/dr17/irspec/apogee-libraries/>`_. The exact library set and selection rules depend on the survey release.
 
 On-the-fly LSF convolution
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Alternatively, keep a sufficiently high-resolution synthetic library,
-interpolate a trial spectrum at the requested stellar labels, and convolve
-that model with the observation's LSF before evaluating its residuals.
-Apply the appropriate wavelength-dependent profile separately across orders
-or detector segments, with sampling handled consistently.
+Alternatively, supply a sufficiently high-resolution synthetic library and the
+LSF information for each observed spectrum directly to FERRE. FERRE interpolates
+trial models and performs the LSF convolution internally during model evaluation,
+before comparing them with the observed spectrum. The wrapper's responsibility
+is to prepare the LSF inputs and configure FERRE, rather than convolving each
+trial model in Python.
+
+FERRE's per-object modes include wavelength-independent sampled profiles
+(``LSF=11``), wavelength-dependent sampled profiles (``LSF=12``), and Gaussian
+profiles specified by FWHM, constant or wavelength-dependent (``LSF=13`` or
+``LSF=14``). The LSF data are supplied through ``LSFFILE``; sampled profiles
+also require an appropriate ``NLSF``. The input layout, normalization, pixel
+sampling, and ordering must match FERRE's selected mode and synthetic grid.
+The observational LSF must first be represented in that format; a stored
+``Spec1D.lsf`` object is not passed through automatically.
 
 This approach can use an observation-specific LSF without storing a separate
 grid for every profile, but adds work to model evaluation. Kernels or convolution
 operators can be prepared once and reused when the LSF is fixed during a fit.
 Using a known LSF on the fly does not imply fitting the LSF parameters themselves.
+
+See FERRE's `LSF mode definitions
+<https://github.com/dnidever/ferre/blob/4016d9e558d0bff6c1ec41f65bb1ebd04533efec/src/share.f90>`_,
+`per-spectrum LSF reader
+<https://github.com/dnidever/ferre/blob/4016d9e558d0bff6c1ec41f65bb1ebd04533efec/src/ferre.f90>`_, and
+`model-evaluation routine
+<https://github.com/dnidever/ferre/blob/4016d9e558d0bff6c1ec41f65bb1ebd04533efec/src/flx.f90>`_.
 
 Both approaches must account for the model's existing broadening and sampling.
 Avoid convolving an already matched library a second time. Broadening cannot
@@ -71,7 +93,7 @@ Current package support
 -----------------------
 
 ``Spec1D`` accepts an optional ``lsf`` attribute and preserves it as opaque
-metadata. ASPCAP does not interpret that object, construct an LSF, convolve
+metadata. The current ASPCAP wrapper does not interpret that object, construct an LSF, convolve
 spectra, or automatically select a matching library. Supplying ``lsf`` therefore
 does not change a model evaluation or fit.
 
@@ -100,4 +122,4 @@ Record the provenance of the model broadening and the observation's instrumental
 profile. Check compatibility separately for each order or chip, retain masks
 for detector gaps and unusable pixels, and compare model and observed line
 profiles before interpreting an abundance residual as a composition change.
-Automatic LSF matching and convolution are future extensions to this package.
+FERRE already supports internal convolution. Preparing its per-spectrum LSF\ninputs and exposing those controls through this ASPCAP wrapper are future\nextensions to this package.
