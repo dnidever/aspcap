@@ -102,6 +102,41 @@ class SpectrumTests(unittest.TestCase):
         assert_allclose(spec._flux, 6)
         assert_allclose(spec._err, 0.6)
 
+    def test_normalized_state_survives_adaptation_and_order_selection(self):
+        source = Spec1D.from_native(
+            np.arange(20.0) + 1,
+            np.full(20, 6.0),
+            err=np.full(20, 0.6),
+            regions=[(1, 7), (12, 20)],
+            flux_unit="counts",
+        )
+        normalized = continuum.from_array(source, np.full(source.shape, 2.0)).apply(
+            source
+        )
+        for selected in (normalized[0], normalized.flatten(), normalized.to_native()):
+            self.assertEqual(selected._flux_unit, "counts")
+            self.assertEqual(selected.flux_unit, "")
+            self.assertTrue(selected.normalized)
+        foreign = SimpleNamespace(
+            flux=normalized.flux,
+            err=normalized.err,
+            wave=normalized.wave,
+            mask=normalized.mask,
+            numpix=normalized.numpix,
+            normalized=True,
+            _cont=normalized.cont,
+            _flux=normalized._flux,
+            _err=normalized._err,
+            flux_unit="",
+            _flux_unit="counts",
+        )
+        adapted = Spec1D.from_spectrum(foreign)
+        out = continuum.from_array(adapted, np.full(adapted.shape, 3.0)).apply(adapted)
+        assert_allclose(out.flux[out.valid], 1.0)
+        assert_allclose(out.cont[out.valid], 6.0)
+        self.assertEqual(out._flux_unit, "counts")
+        assert_allclose(adapted.cont[adapted.valid], 2.0)
+
     def test_foreign_spectrum_without_doppler(self):
         spec = SimpleNamespace(
             flux=np.ones((20, 3)) * 4,

@@ -281,6 +281,8 @@ class Spec1D:
                     ),
                 )
         out.normalized = self.normalized
+        if hasattr(self, "_flux_unit"):
+            out._flux_unit = deepcopy(self._flux_unit)
         out._continuum_func = self._continuum_func
         out.continuum_history = deepcopy(self.continuum_history)
         if self._cont is not None:
@@ -396,6 +398,17 @@ class Spec1D:
             metadata=getattr(spectrum, "metadata", None),
         )
         out.normalized = bool(getattr(spectrum, "normalized", False))
+        cached = getattr(spectrum, "_cont", None)
+        if cached is not None:
+            out.cont = cached
+        for name in ("_flux", "_err", "_flux_unit", "continuum_history"):
+            if hasattr(spectrum, name):
+                setattr(out, name, deepcopy(getattr(spectrum, name)))
+        callback = getattr(spectrum, "continuum_func", None)
+        if callable(callback):
+            # Preserve the cache as well as the callable; the public setter
+            # intentionally invalidates a cache when a user changes methods.
+            out._continuum_func = callback
         return out
 
     @classmethod
@@ -475,6 +488,8 @@ class Spec1D:
             lsf=self.lsf,
         )
         out.normalized = self.normalized
+        if hasattr(self, "_flux_unit"):
+            out._flux_unit = deepcopy(self._flux_unit)
         out.cont = cont
         for name in ("_flux", "_err"):
             value = getattr(self, name, None)
@@ -513,6 +528,8 @@ class Spec1D:
             lsf=self.lsf,
         )
         out.normalized = self.normalized
+        if hasattr(self, "_flux_unit"):
+            out._flux_unit = deepcopy(self._flux_unit)
         for name in ("_flux", "_err"):
             value = getattr(self, name, None)
             if value is not None:
