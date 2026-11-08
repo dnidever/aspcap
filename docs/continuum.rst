@@ -17,6 +17,27 @@ avoiding large unscaled pixel powers. Wavelength coordinates are also available;
 on a regular log-wavelength grid they represent a different polynomial choice
 from pixel coordinates.
 
+Role in the fitting workflow
+----------------------------
+
+Normalize before :doc:`global-fitting`, using the same continuum convention as
+the synthetic library. A continuum or pseudo-continuum is an estimate rather
+than a guarantee of unabsorbed flux, especially in cool, line-rich spectra.
+Compare methods on representative data and inspect residuals and fitted labels.
+No estimator is universally best for every stellar type or signal-to-noise.
+
+For :doc:`element-fitting`, retain a supplied fixed continuum so that the
+abundance measurement does not silently refit the normalization in each window.
+If the data have already been normalized, pass a continuum of ones to
+``fit_abundance``. Its division by the supplied continuum is independent of
+``continuum.fit``; the abundance function does not call a continuum estimator.
+
+Keep orders or chips separate during estimation. Preserve bad-pixel masks,
+propagate the flux scaling to one-sigma errors, and inspect the estimated
+continuum before applying it. Applying it does not propagate uncertainty in the
+continuum estimate. Normalization does not correct radial velocity, wavelength
+convention, or an :doc:`lsf` mismatch.
+
 Available methods
 -----------------
 

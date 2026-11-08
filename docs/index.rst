@@ -23,20 +23,26 @@ This HGE package provides Spec1D objects, external continuum estimators, a Grid 
 
 The current fit_abundance interface accepts supplied global parameters and a fixed continuum. It uses unit weights inside the selected windows and zero outside, excludes bad pixels, and uses measurement uncertainties in the fit. Arbitrary element-specific weight curves are not yet exposed by this interface; Grid.fit accepts explicit pixel weights. External normalization is separate from FERRE's internal continuum controls.
 
+The main topic pages are :doc:`grid`, :doc:`lsf`, :doc:`continuum`,
+:doc:`global-fitting`, and :doc:`element-fitting`.
+
 Start with :doc:`spectrum` for Spec1D objects, multiple orders, uncertainties,
 masks, and APOGEE chip mapping. See :doc:`continuum` for polynomial, spline,
 median, percentile, and model-ratio estimators, options, and worked examples.
 Spectrum objects and external continuum estimation require no FERRE executable
 or Doppler model files. See :doc:`grid` for interpolation and global fitting,
-and :doc:`quickstart` for the individual-element workflow.
+and :doc:`element-fitting` for the individual-element workflow.
 
 .. toctree::
    :maxdepth: 2
    :caption: User guide
 
+   grid
+   lsf
+   continuum
+   global-fitting
+   element-fitting
+   spectrum
    quickstart
    inputs
-   grid
-   spectrum
-   continuum
    python-api
