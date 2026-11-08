@@ -20,29 +20,6 @@ wavelength sampling. They remain individual measurements even though they
 have already been resampled. Keep each visit's identity and relevant
 instrumental information with its fit.
 
-Do not remove the Doppler shift again
--------------------------------------
-
-The APOGEE combination pipeline has already removed each visit's measured
-Doppler shift and placed it on the common rest-frame scale before combination.
-The individual-visit rows saved in apStar are also shifted and resampled.
-Do not apply another radial-velocity correction using the file's recorded
-velocities. A barycentric velocity in the metadata does not imply that the
-stored spectral row still needs that shift.
-
-The common grid uses vacuum wavelengths. For the standard 8,575-pixel apStar
-array:
-
-.. math::
-
-   \log_{10}(\lambda_i / \mathrm{\mathring{A}}) = 4.179 + 6\times10^{-6}i,
-   \qquad i=0,\ldots,8574.
-
-See the SDSS `APOGEE visit-combination documentation
-<https://www.sdss4.org/dr17/irspec/spectral_combination/>`_ and
-`Using APOGEE Spectra <https://www.sdss4.org/dr17/irspec/spectra/>`_ for the
-products, weighting schemes, and wavelength convention.
-
 Preparing an apStar row for fitting
 -----------------------------------
 
