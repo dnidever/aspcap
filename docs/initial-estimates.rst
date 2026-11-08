@@ -66,10 +66,10 @@ than obtaining a per-star atmospheric estimate from a learned predictor.
 Source: `QASPCAP qaspcap.pro, initialization block
 <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
 
-SDSS APOGEE ASPCAP: configurable coarse-to-fine fitting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DR17 ASPCAP: configurable coarse-to-fine fitting
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The inspected survey IDL driver reads library-specific settings including
+The inspected DR17 ASPCAP IDL driver reads library-specific settings including
 ``INITPAR``, ``coarse``, ``init``, and ``indini``. For subsequent non-coarse
 classes, it selects a previous coarse result through ``aspcap_bestclass`` and
 maps its fitted parameters into the next library by label. The FERRE input
@@ -83,7 +83,7 @@ The Python ``ferre.writenml`` helper also exposes ``init``, ``indini``, and
 initial-estimate pipeline. The production orchestration is important context
 when inspecting only the Python directory originally linked for this project.
 
-Sources: `SDSS doaspcap.pro
+Sources: `DR17 ASPCAP doaspcap.pro
 <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L188-L214>`_,
 `coarse-result transfer
 <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L333-L344>`_,

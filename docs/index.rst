@@ -14,7 +14,7 @@ The ASPCAP workflow
 
    We are also developing an alternative called mini-grids. Each mini-grid adds a dedicated seventh dimension to the six global stellar labels, varying the abundance of a single target element. During that element's abundance fit, the six global labels are held at their global-fit values and only the dedicated element-abundance dimension is varied. This provides an element-specific fitting coordinate instead of using the shared alpha or metallicity coordinate as a proxy.
 
-See the `SDSS ASPCAP description <https://www.sdss4.org/dr17/irspec/aspcap/>`_ for the survey workflow and its grid-dependent choices.
+See the `DR17 ASPCAP description <https://www.sdss4.org/dr17/irspec/aspcap/>`_ for the survey workflow and its grid-dependent choices.
 
 What this package currently provides
 ------------------------------------

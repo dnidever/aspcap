@@ -6,7 +6,7 @@ labels that influence many spectral features. It supplies the parameter solution
 used by the subsequent :doc:`element-fitting` stage.
 
 See :doc:`initial-estimates` for starting values, multiple-start examples,
-and a comparison with QASPCAP, SDSS APOGEE ASPCAP, and Astra.
+and a comparison with QASPCAP, DR17 ASPCAP, and Astra.
 
 Labels and microturbulence
 --------------------------

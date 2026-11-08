@@ -109,8 +109,8 @@ Sources: `qaspcap.pro
 `rd_apvisit.pro
 <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/rd_apvisit.pro>`_.
 
-SDSS APOGEE ASPCAP
-~~~~~~~~~~~~~~~~~~
+DR17 ASPCAP
+~~~~~~~~~~~
 
 The inspected IDL reader accepts apVisit data and apStar spectra, including
 optional visit rows already stored in apStar. It sorts the original apVisit
