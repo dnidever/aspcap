@@ -47,78 +47,23 @@ six-label initial estimator.
 How the earlier implementations handled initialization
 ------------------------------------------------------
 
-These are source-level comparisons of the three implementations discussed for
-this project. Their configuration and available upstream estimates differ;
-they should not be read as a single prescription shared by every survey release.
-The links pin the inspected revisions so the comparison remains reproducible.
+The inspected versions use three different approaches:
 
-QASPCAP: FERRE-generated multiple starts
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* **QASPCAP — multiple starts.** Configures FERRE's ``INDINI`` and ``NRUNS``
+  to search from several starting points.
+  `Source <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
 
-The inspected ``qaspcap.pro`` writes ``INDINI`` and ``NRUNS`` to configure
-FERRE's multiple-start initialization. It begins with two starts per dimension,
-then changes selected leading dimensions to one start as dimensionality grows.
-``NRUNS`` is the product of these counts. The dimension order comes from the
-library; the counts should not be interpreted as fixed choices for particular
-physical labels. This path delegates starting-point generation to FERRE rather
-than obtaining a per-star atmospheric estimate from a learned predictor.
+* **DR17 ASPCAP — coarse-to-fine fitting.** Runs preliminary fits, selects a
+  preferred coarse solution, and uses its parameters to initialize the next
+  library fit. Library configuration controls the initialization.
+  `Source <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L333-L344>`_.
 
-Source: `QASPCAP qaspcap.pro, initialization block
-<https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
-
-DR17 ASPCAP: configurable coarse-to-fine fitting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The inspected DR17 ASPCAP IDL driver reads library-specific settings including
-``INITPAR``, ``coarse``, ``init``, and ``indini``. For subsequent non-coarse
-classes, it selects a previous coarse result through ``aspcap_bestclass`` and
-maps its fitted parameters into the next library by label. The FERRE input
-writer exposes ``INIT`` and ``INDINI`` and derives the run count from the
-initialization counts when supplied. Thus the survey orchestration can use
-coarse fits to initialize later fits, with behavior controlled by its library
-configuration.
-
-The Python ``ferre.writenml`` helper also exposes ``init``, ``indini``, and
-``nruns``. That helper writes FERRE controls; it is not itself a complete
-initial-estimate pipeline. The production orchestration is important context
-when inspecting only the Python directory originally linked for this project.
-
-Sources: `DR17 ASPCAP doaspcap.pro
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L188-L214>`_,
-`coarse-result transfer
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/doaspcap.pro#L333-L344>`_,
-`IDL FERRE input writer
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/pro/aspcap/writeferre.pro>`_, and
-`Python FERRE input writer
-<https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/python/apogee/aspcap/ferre.py#L38-L79>`_.
-
-Astra: upstream estimates, coarse search, then refinement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The inspected default estimate generator tries ApogeeNet results and then
-quality-selected Gaia XP estimates from Zhang et al. (2023) for remaining
-spectra. It supplies temperature, gravity, and a metallicity estimate, sets
-initial alpha, carbon, and nitrogen ratios to zero, and estimates microturbulence
-from gravity. An additional specialized path reads existing DR17 parameters.
-
-The coarse-stage planner accepts a configurable estimate generator, identifies
-suitable libraries, and clips guesses to their allowed interiors. Its fallback
-branches can adjust a finite guess toward a nearby grid or try grid centers
-when supplied estimates are invalid. These branches operate on spectra yielded
-by the generator; they do not guarantee coverage of spectra it never yields.
-
-The refinement stage selects coarse results using a penalized reduced
-chi-square that accounts for quality flags, computes a model-guided continuum,
-and passes the selected fitted labels into the stellar-parameter stage.
-Initialization is therefore coupled to library selection and normalization,
-rather than just a single starting vector.
-
-Sources: `Astra initial.py
-<https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/initial.py>`_,
-`coarse.py
-<https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/coarse.py>`_, and
-`stellar_parameters.py
-<https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/stellar_parameters.py>`_.
+* **Astra — upstream estimates plus refinement.** Starts from ApogeeNet or
+  quality-selected Gaia XP estimates, tries suitable grids in a coarse stage,
+  then initializes refinement from the preferred coarse result.
+  `Estimates <https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/initial.py>`_,
+  `coarse search <https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/coarse.py>`_,
+  `refinement <https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/stellar_parameters.py>`_.
 
 Proposed HGE strategy
 ---------------------
