@@ -5,7 +5,10 @@ The global stage fits the usable spectrum jointly to determine the stellar
 labels that influence many spectral features. It supplies the parameter solution
 used by the subsequent :doc:`element-fitting` stage.
 
-See :doc:`initial-estimates` for starting values, multiple-start examples,\nand a comparison with QASPCAP, SDSS APOGEE ASPCAP, and Astra.\n\nLabels and microturbulence
+See :doc:`initial-estimates` for starting values, multiple-start examples,
+and a comparison with QASPCAP, SDSS APOGEE ASPCAP, and Astra.
+
+Labels and microturbulence
 --------------------------
 
 The planned HGE global analysis has six free labels:

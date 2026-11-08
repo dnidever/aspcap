@@ -1,5 +1,5 @@
 Initial estimates for global fitting
-===================================
+====================================
 
 An initial estimate supplies the starting value for each grid label before
 :doc:`global-fitting`. A good estimate can reduce wasted searches and help
@@ -11,7 +11,7 @@ separate tasks. An accurate temperature estimate cannot rescue a library that
 does not cover the star, its composition, or its instrumental profile.
 
 Current ASPCAP interface
------------------------
+------------------------
 
 ``Grid.fit(flux, error, start=...)`` accepts a complete mapping keyed by the
 exact, case-sensitive ``grid.labels``, or a vector in that order. Supply values
@@ -45,7 +45,7 @@ illustrates the starting-value interface using two toy labels, not a physical
 six-label initial estimator.
 
 How the earlier implementations handled initialization
------------------------------------------------------
+------------------------------------------------------
 
 These are source-level comparisons of the three implementations discussed for
 this project. Their configuration and available upstream estimates differ;
@@ -53,7 +53,7 @@ they should not be read as a single prescription shared by every survey release.
 The links pin the inspected revisions so the comparison remains reproducible.
 
 QASPCAP: FERRE-generated multiple starts
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The inspected ``qaspcap.pro`` writes ``INDINI`` and ``NRUNS`` to configure
 FERRE's multiple-start initialization. It begins with two starts per dimension,
@@ -67,7 +67,7 @@ Source: `QASPCAP qaspcap.pro, initialization block
 <https://github.com/callendeprieto/qaspcap/blob/636af1374158acce27cb02dfcf3966efd08eb1f1/qaspcap.pro#L399-L405>`_.
 
 SDSS APOGEE ASPCAP: configurable coarse-to-fine fitting
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The inspected survey IDL driver reads library-specific settings including
 ``INITPAR``, ``coarse``, ``init``, and ``indini``. For subsequent non-coarse
@@ -93,7 +93,7 @@ Sources: `SDSS doaspcap.pro
 <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/python/apogee/aspcap/ferre.py#L38-L79>`_.
 
 Astra: upstream estimates, coarse search, then refinement
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The inspected default estimate generator tries ApogeeNet results and then
 quality-selected Gaia XP estimates from Zhang et al. (2023) for remaining
