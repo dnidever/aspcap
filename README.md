@@ -3,17 +3,17 @@
 ASPCAP provides multi-order spectral data objects, external continuum
 normalization, and element-abundance fitting with FERRE for HGE.
 
-- [Spec1D objects](docs/spectrum.rst): single or multiple orders, unequal chip
+- [Spec1D objects](https://github.com/dnidever/aspcap/blob/main/docs/spectrum.rst): single or multiple orders, unequal chip
   lengths, masks, uncertainties, copying, and native-grid mapping.
-- [External continuum normalization](docs/continuum.rst): polynomial, spline,
+- [External continuum normalization](https://github.com/dnidever/aspcap/blob/main/docs/continuum.rst): polynomial, spline,
   median, percentile, and model-ratio methods with diagnostics.
-- [FERRE abundance fitting](docs/quickstart.rst): fit an element using fixed
+- [FERRE abundance fitting](https://github.com/dnidever/aspcap/blob/main/docs/quickstart.rst): fit an element using fixed
   global parameters and a supplied continuum.
 
-Install the current main branch with:
+Install the latest release from PyPI with:
 
 ```sh
-python -m pip install 'git+https://github.com/dnidever/aspcap.git@main'
+python -m pip install --upgrade aspcap
 ```
 
 The spectrum and continuum modules do not need a FERRE executable or Doppler
@@ -40,7 +40,7 @@ location.
 
 ## Run your own fit
 
-1. Copy [one-star.json](examples/one-star.json) and point it to your inputs.
+1. Copy [one-star.json](https://github.com/dnidever/aspcap/blob/main/examples/one-star.json) and point it to your inputs.
    Relative paths are resolved from the configuration file. Supply the global
    fit as a dictionary with one starting value per grid label.
 2. Supply a spectrum CSV with `wavelength,flux,error,continuum` columns. The
@@ -48,7 +48,7 @@ location.
    wavelength units and air/vacuum convention. Give flux and one-sigma error
    in the same units as the positive global continuum. The wrapper divides
    both by that continuum and holds it fixed during the fit.
-3. Copy [mg.json](examples/mg.json) and set the species, the one free grid label,
+3. Copy [mg.json](https://github.com/dnidever/aspcap/blob/main/examples/mg.json) and set the species, the one free grid label,
    and one or more inclusive wavelength windows. Overlapping windows still
    give each pixel weight one. Nonfinite flux and nonpositive or nonfinite
    uncertainties get zero weight. Use `add_labels` to list any fixed logarithmic
@@ -87,8 +87,8 @@ is outside your PATH.
 
 ## Documentation
 
-The [user guide](docs/index.rst) includes a quickstart, input reference,
-[Spec1D guide](docs/spectrum.rst), [continuum methods](docs/continuum.rst), and
+The [user guide](https://github.com/dnidever/aspcap/blob/main/docs/index.rst) includes a quickstart, input reference,
+[Spec1D guide](https://github.com/dnidever/aspcap/blob/main/docs/spectrum.rst), [continuum methods](https://github.com/dnidever/aspcap/blob/main/docs/continuum.rst), and
 Python API. The repository includes Read the Docs build configuration. To
 preview the guide locally after installing ASPCAP:
 
@@ -99,13 +99,13 @@ python -m sphinx -W -b html docs docs/_build/html
 
 
 The full-wavelength APOGEE DR17 M-giant test grid and detector weights are
-included in ASPCAP installations from main.
+included in ASPCAP installations.
 
 ```sh
-python -m pip install 'git+https://github.com/dnidever/aspcap.git@main'
+python -m pip install --upgrade aspcap
 ```
 
-See the [Grid walkthrough](docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
+See the [Grid walkthrough](https://github.com/dnidever/aspcap/blob/main/docs/grid.rst#fit-the-full-apogee-dr17-wavelength-grid)
 for an example using the installed files.
 
 
@@ -140,8 +140,8 @@ orders raise an error by default; `on_failure="mask"` returns flagged, masked
 results instead. `result.apply(spec)` returns a copy; `inplace=True` updates the
 input explicitly. All normalization here is outside FERRE. Applying a
 continuum rescales both flux and error; it does not include uncertainty in the
-continuum estimate. See [the spectrum guide](docs/spectrum.rst),
-[the continuum guide](docs/continuum.rst), and the runnable
-[example](examples/spectrum_continuum.py). The core design is adapted from
+continuum estimate. See [the spectrum guide](https://github.com/dnidever/aspcap/blob/main/docs/spectrum.rst),
+[the continuum guide](https://github.com/dnidever/aspcap/blob/main/docs/continuum.rst), and the runnable
+[example](https://github.com/dnidever/aspcap/blob/main/examples/spectrum_continuum.py). The core design is adapted from
 [Doppler Spec1D](https://github.com/dnidever/doppler/blob/6e165f87c6d766eff6eaa1fbee2c82be5bb30cc0/doppler/spec1d.py);
 its MIT notice is retained in `LICENSE-DOPPLER`.
