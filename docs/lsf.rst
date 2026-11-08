@@ -1,6 +1,9 @@
 Line-spread function (LSF)
 ==========================
 
+See :doc:`ferre` for FERRE's internal processing sequence, control options,
+and a link to its manual.
+
 The line-spread function describes how the instrument spreads an intrinsically
 narrow spectral feature over detector pixels. Its width and shape affect line
 profiles and therefore the comparison between observations and synthetic spectra.

@@ -1,6 +1,9 @@
 External continuum normalization
 ================================
 
+See :doc:`ferre` for FERRE's internal processing sequence, control options,
+and a link to its manual.
+
 All functions in ``aspcap.continuum`` operate outside FERRE. They make no
 executable calls, change no FERRE settings, and load no Doppler model data.
 Fitting a continuum and applying it are separate operations::

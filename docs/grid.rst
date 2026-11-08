@@ -1,6 +1,9 @@
 Synthetic spectral grids
 ========================
 
+See :doc:`ferre` for FERRE's internal processing sequence, control options,
+and a link to its manual.
+
 Use :class:`aspcap.Grid` to inspect a FERRE library, generate synthetic spectra,
 or fit stellar labels with FERRE. Run these examples from the repository
 checkout after following the installation steps in :doc:`quickstart`. They
