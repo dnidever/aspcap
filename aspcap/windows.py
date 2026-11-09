@@ -54,6 +54,8 @@ def load_dr17(species, *, kind="mask", wavelength=None):
     if kind not in ("mask", "filt", "wind"):
         raise ValueError("kind must be 'mask', 'filt', or 'wind'")
     names = {name.lower(): name for name in dr17_species()}
+    if kind == "mask":
+        names["global"] = "global"
     if not isinstance(species, str) or species.lower() not in names:
         raise ValueError("Unknown DR17 species; see dr17_species()")
     root = files("aspcap").joinpath("data/dr17")

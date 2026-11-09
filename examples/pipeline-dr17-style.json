@@ -1,0 +1,437 @@
+{
+  "version": 1,
+  "description": "EDIT BEFORE USE: DR17-style fitting stages, not an exact survey reprocessing. Supply native APOGEE preconvolved grids and replace illustrative labels/starts. External continuum treatment substitutes for historical FERRE settings. Includes all 24 attempted species; P, Cu, Nd, C13 were unreliable in DR17.",
+  "grids": {
+    "giants": "grids/replace-with-giant-grid.hdr"
+  },
+  "steps": [
+    {
+      "type": "prepare",
+      "grid": "giants"
+    },
+    {
+      "type": "normalize",
+      "method": "chebyshev",
+      "options": {
+        "degree": 4,
+        "clip": [
+          3,
+          3
+        ]
+      }
+    },
+    {
+      "type": "initial",
+      "parameters": {
+        "TEFF": 4500,
+        "LOGG": 2,
+        "METALS": 0,
+        "C": 0,
+        "N": 0,
+        "ALPHA": 0,
+        "LOG10VDOP": 0.2
+      }
+    },
+    {
+      "type": "global_fit",
+      "name": "coarse multi-start search",
+      "starts": [
+        {
+          "TEFF": 4000,
+          "LOGG": 1,
+          "METALS": -0.5,
+          "C": 0,
+          "N": 0,
+          "ALPHA": 0,
+          "LOG10VDOP": 0.2
+        },
+        {
+          "TEFF": 4500,
+          "LOGG": 2,
+          "METALS": 0,
+          "C": 0,
+          "N": 0,
+          "ALPHA": 0,
+          "LOG10VDOP": 0.2
+        },
+        {
+          "TEFF": 5000,
+          "LOGG": 3,
+          "METALS": -1,
+          "C": 0,
+          "N": 0,
+          "ALPHA": 0,
+          "LOG10VDOP": 0.2
+        }
+      ],
+      "weights": {
+        "dr17": "global"
+      }
+    },
+    {
+      "type": "normalize",
+      "name": "model-guided continuum correction",
+      "method": "model_ratio",
+      "options": {
+        "window": 151
+      }
+    },
+    {
+      "type": "global_fit",
+      "name": "refine stellar parameters",
+      "weights": {
+        "dr17": "global"
+      }
+    },
+    {
+      "type": "abundances",
+      "name": "fixed-continuum element fits",
+      "elements": [
+        {
+          "species": "C",
+          "label": "C",
+          "weights": {
+            "dr17": "C"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "CI",
+          "label": "C",
+          "weights": {
+            "dr17": "CI"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "N",
+          "label": "N",
+          "weights": {
+            "dr17": "N"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "O",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "O"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "Na",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Na"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Mg",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "Mg"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "Al",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Al"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Si",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "Si"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "P",
+          "label": "METALS",
+          "weights": {
+            "dr17": "P"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "S",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "S"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "K",
+          "label": "METALS",
+          "weights": {
+            "dr17": "K"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Ca",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "Ca"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "Ti",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "Ti"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "TiII",
+          "label": "ALPHA",
+          "weights": {
+            "dr17": "TiII"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        },
+        {
+          "species": "V",
+          "label": "METALS",
+          "weights": {
+            "dr17": "V"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Cr",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Cr"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Mn",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Mn"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Fe",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Fe"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Co",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Co"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Ni",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Ni"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Cu",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Cu"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Ce",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Ce"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "Nd",
+          "label": "METALS",
+          "weights": {
+            "dr17": "Nd"
+          },
+          "ties": {
+            "C": {
+              "METALS": -1
+            },
+            "N": {
+              "METALS": -1
+            },
+            "ALPHA": {
+              "METALS": -1
+            }
+          }
+        },
+        {
+          "species": "C13",
+          "label": "C",
+          "weights": {
+            "dr17": "C13"
+          },
+          "add_labels": [
+            "METALS"
+          ]
+        }
+      ]
+    }
+  ]
+}

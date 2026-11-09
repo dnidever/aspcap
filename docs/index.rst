@@ -60,6 +60,7 @@ See :doc:`element-windows` for the formats and legacy readers.
    element-windows
    element-fitting
    pipeline
+   pipeline-recipes
    spectrum
    inputs
    python-api

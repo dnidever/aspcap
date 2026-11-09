@@ -8,6 +8,8 @@ from .pipeline import Pipeline, PipelineResult, ElementConfig, ElementFitResult
 
 __all__ = [
     "Grid",
+    "PipelineRecipe",
+    "RecipeResult",
     "fit_abundance",
     "Spec1D",
     "continuum",
@@ -17,3 +19,5 @@ __all__ = [
     "ElementConfig",
     "ElementFitResult",
 ]
+
+from .recipe import PipelineRecipe, RecipeResult

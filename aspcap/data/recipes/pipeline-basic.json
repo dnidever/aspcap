@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "description": "Small runnable test on a normalized toy observation.",
+  "grids": {
+    "toy": "toy-grid.dat"
+  },
+  "steps": [
+    {
+      "type": "prepare",
+      "grid": "toy"
+    },
+    {
+      "type": "normalize",
+      "method": "skip"
+    },
+    {
+      "type": "initial",
+      "parameters": {
+        "ALPHA": 0,
+        "METALS": -0.25
+      }
+    },
+    {
+      "type": "global_fit",
+      "name": "global parameters"
+    },
+    {
+      "type": "abundances",
+      "elements": [
+        {
+          "species": "Mg",
+          "label": "ALPHA",
+          "windows": [
+            [
+              15002,
+              15005
+            ]
+          ],
+          "add_labels": [
+            "METALS"
+          ]
+        }
+      ]
+    }
+  ]
+}

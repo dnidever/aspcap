@@ -204,3 +204,11 @@ Both use the :doc:`grid` tie syntax; the default mode is relative. Ties are
 recorded in the result configuration. A metallicity-compensation example is
 shown in :doc:`element-fitting`. Untied labels retain the usual fixed/free
 behavior.
+
+Text configuration
+------------------
+
+Use :doc:`pipeline-recipes` to describe ordered stages in a JSON file,
+including repeated fits, multiple starts, and element weights/ties.
+The basic recipe runs on bundled test data; a DR17-style template provides
+a starting point for production grids.

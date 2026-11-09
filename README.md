@@ -210,3 +210,21 @@ parameter ties. For example, `ties={"ALPHA": {"METALS": -1.0}}` changes ALPHA
 by minus the change in METALS, preserving [alpha/H] for that grid convention.
 No ties are applied by default. Absolute affine relations are also supported;
 see the [grid guide](https://aspcap.readthedocs.io/en/latest/grid.html#optional-parameter-ties).
+
+### Pipelines described in text files
+
+`PipelineRecipe` runs an ordered ASCII JSON recipe. Steps can prepare a
+spectrum, normalize it, supply initial labels, compare multiple fit starts or
+compatible grids, refine the continuum and fit again, then measure elements.
+
+```sh
+aspcap run examples/pipeline-basic.json examples/pipeline-spectrum.csv --output result.json
+```
+
+The basic example is runnable from a checkout; recipe and test files are also
+included under `aspcap/data/recipes` after installation.
+`examples/pipeline-dr17-style.json` is an editable template with the archived
+DR17 masks, 24 attempted species, and abundance ties. It requires production
+grids and label/start adjustments. It approximates the fitting stages and does
+not reproduce all historical FERRE settings, survey selection, or calibrations.
+See [Text Pipeline Recipes](https://aspcap.readthedocs.io/en/latest/pipeline-recipes.html).

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aspcap"
-version = "0.4.0"
+version = "0.5.0"
 description = "Element abundance fits with FERRE"
 readme = "README.md"
 license = {file = "LICENSE"}
@@ -24,4 +24,4 @@ aspcap = "aspcap.cli:main"
 packages = ["aspcap"]
 
 [tool.setuptools.package-data]
-aspcap = ["data/*.hdr", "data/*.unf", "data/*-weights.json", "data/dr17/*"]
+aspcap = ["data/*.hdr", "data/*.unf", "data/*-weights.json", "data/dr17/*", "data/recipes/*"]
