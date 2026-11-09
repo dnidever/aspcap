@@ -50,6 +50,53 @@ Inspect residuals and recovery on reference spectra before adopting a window set
 The bundled toy windows demonstrate the interface; they are not a validated HGE
 line-selection prescription.
 
+DR17 windows and weights
+------------------------
+
+The package bundles the original files from the DR17 directory of
+`sdss/apogee <https://github.com/sdss/apogee/tree/e134409dc14b20f69e68a0d4d34b2c1b5056a901/data/windows/dr17>`_.
+They are included in installed wheels, so no download is required.
+
+The ASPCAP method constructed pixel weights from the sensitivity of synthetic
+flux to the target abundance, penalizing sensitivity to competing elements and
+poor agreement with reference spectra. This is described in
+`Garcia Perez et al. (2016) <https://doi.org/10.3847/0004-6256/151/6/144>`_.
+For DR17, the archived files also incorporate manual window selection and
+bad-region exclusions. Most windows were retained from DR16, with additional
+Ce regions, as described in the
+`DR17 paper <https://arxiv.org/abs/2112.02026>`_.
+
+* ``.filt`` contains the original fractional pixel weights.
+* ``.wind`` contains wavelength intervals and editing flags: 0 disables,
+  1 retains, and 2 adds a region with unit weights.
+* ``.mask`` contains the final weights supplied to FERRE, preserving fractional
+  weights after window edits and bad-region exclusions. Use these by default.
+
+The loader returns weights on the 7514-pixel DR17 vacuum Angstrom scale, with
+three chips concatenated. It can select matching grid pixels or expand onto
+the 8575-pixel apStar scale with zero weights in the gaps:
+
+.. code-block:: python
+
+   from aspcap import windows
+
+   wave, weights = windows.load_dr17("Mg")
+   original_wave, original_weights = windows.load_dr17("Mg", kind="filt")
+   edited_regions = windows.load_dr17("Mg", kind="wind")
+
+For an existing compatible APOGEE grid, use
+``_, weights = windows.load_dr17("Mg", wavelength=grid.wavelengths)`` and
+``grid.fit(spec, start=parameters, free_labels="ALPHA", weights=weights)``
+if that grid represents Mg with its ``ALPHA`` label. Label names and the
+conversion to [Mg/H] depend on the library. Wavelengths must match native DR17
+pixels; the loader does not interpolate weights onto arbitrary spectra.
+
+The archive includes 27 species, including unused historical placeholders.
+DR17 did not attempt Ge, Rb, or Yb, and judged P, Cu, Nd, and C13 unreliable
+(`DR17 abundance guidance <https://www.sdss4.org/dr17/irspec/abundances/>`_).
+These are historical prescriptions, not a validation for every HGE spectrum.
+Source commit, checksums, and the SDSS BSD license accompany the bundled files.
+
 Current abundance interface
 ---------------------------
 

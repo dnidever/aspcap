@@ -1,0 +1,6 @@
+{
+  "repository": "sdss/apogee",
+  "commit": "e134409dc14b20f69e68a0d4d34b2c1b5056a901",
+  "source": "data/windows/dr17",
+  "notes": "Original .filt, .wind, .mask and wave.dat retained. README-dr16 is referenced by upstream README. Integer indices in wave.dat have rounding offsets; loader registers using wavelength column."
+}
