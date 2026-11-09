@@ -56,21 +56,74 @@ def _run(args):
 
 
 def _recipe_run(args):
-    """Execute a text recipe on a prepared, flat CSV spectrum."""
+    """Run one input or an ordered batch, preserving read/fit failures."""
     from .recipe import PipelineRecipe
-    from .spectrum import Spec1D
+    from .readers import read_spectrum
 
     recipe = PipelineRecipe.read(args.config, executable=args.ferre)
-    with args.spectrum.open(newline="") as stream:
-        rows = list(csv.DictReader(stream))
-    spectrum = Spec1D(
-        [float(row["flux"]) for row in rows],
-        wave=[float(row["wavelength"]) for row in rows],
-        err=[float(row["error"]) for row in rows],
-        mask=[row.get("mask", "0").lower() in ("1", "true") for row in rows],
-        wavevac=args.wavelength_frame == "vacuum",
+    if args.input_list and args.spectrum:
+        raise ValueError("Use a spectrum argument or --input-list, not both")
+    list_file = args.input_list
+    if args.spectrum and args.spectrum.startswith("@"):
+        list_file = Path(args.spectrum[1:])
+    if list_file is not None:
+        list_file = list_file.resolve()
+        inputs = [
+            list_file.parent / line.strip()
+            for line in list_file.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ]
+        batch = True
+    elif args.spectrum:
+        inputs = [
+            Path(name.strip()) for name in args.spectrum.split(",") if name.strip()
+        ]
+        batch = len(inputs) > 1
+    else:
+        raise ValueError("Supply FITS/CSV paths or --input-list")
+    if not inputs:
+        raise ValueError("Input list is empty")
+    protected = [args.config.resolve(), *(p.resolve() for p in inputs)]
+    if list_file is not None:
+        protected.append(list_file)
+    if args.output.resolve() in protected:
+        raise ValueError("Output must differ from recipe, list, and input spectra")
+    if args.stop_after is not None and not 1 <= args.stop_after <= len(
+        recipe.config["steps"]
+    ):
+        raise ValueError("--stop-after must identify an existing one-based step")
+    grid = recipe._grid(recipe.config["steps"][0]["grid"])
+    results = []
+    for index, path in enumerate(inputs):
+        entry = dict(index=index, source=str(path), success=False)
+        try:
+            spectrum = read_spectrum(
+                path,
+                grid=grid,
+                row=args.fits_row,
+                bad_bits=args.bad_bits,
+                wavevac=args.wavelength_frame == "vacuum",
+            )
+            identity = args.star_id or spectrum.metadata.get("star_id") or path.stem
+            result = recipe.fit(spectrum, star_id=identity, stop_after=args.stop_after)
+            entry.update(
+                star_id=str(identity),
+                success=result.success,
+                parameters=result.parameters,
+                abundances=result.abundances,
+                errors=result.errors,
+                history=result.history,
+                config=result.config,
+            )
+        except (OSError, ValueError, KeyError, TypeError, RuntimeError) as error:
+            entry["errors"] = {"input": str(error)}
+        results.append(entry)
+    success = all(item["success"] for item in results)
+    payload = (
+        dict(success=success, count=len(results), results=results)
+        if batch
+        else results[0]
     )
-    result = recipe.fit(spectrum, star_id=args.star_id)
 
     def serial(value):
         if hasattr(value, "tolist"):
@@ -78,24 +131,11 @@ def _recipe_run(args):
         raise TypeError(f"Cannot serialize {type(value)}")
 
     args.output.write_text(
-        json.dumps(
-            dict(
-                success=result.success,
-                parameters=result.parameters,
-                abundances=result.abundances,
-                errors=result.errors,
-                history=result.history,
-                config=result.config,
-            ),
-            indent=2,
-            default=serial,
-            allow_nan=False,
-        )
-        + "\n"
+        json.dumps(payload, indent=2, default=serial, allow_nan=False) + "\n"
     )
-    if not result.success:
+    if not success:
         raise RuntimeError(
-            f"Recipe failed; partial results saved in {args.output}: {result.errors}"
+            f"{sum(not item['success'] for item in results)} of {len(results)} inputs failed; results saved in {args.output}"
         )
     print(f"Wrote {args.output}")
 
@@ -117,22 +157,33 @@ def main():
     run = commands.add_parser("run", help="run an ordered JSON pipeline recipe")
     run.add_argument("config", type=Path)
     run.add_argument(
-        "spectrum", type=Path, help="prepared CSV: wavelength,flux,error[,mask]"
+        "spectrum", nargs="?", help="FITS/CSV path, comma-separated paths, or @list.txt"
     )
     run.add_argument("--output", type=Path, default=Path("pipeline-result.json"))
     run.add_argument("--ferre", help="FERRE executable")
-    run.add_argument("--star-id", default="star")
+    run.add_argument("--star-id", help="override input identities")
+    run.add_argument(
+        "--input-list", type=Path, help="one path per line, relative to the list file"
+    )
+    run.add_argument(
+        "--fits-row",
+        type=int,
+        default=0,
+        help="zero-based apStar row, default combined row 0",
+    )
+    run.add_argument(
+        "--bad-bits",
+        type=lambda value: int(value, 0),
+        default=255,
+        help="FITS bad pixel bits, default 255",
+    )
+    run.add_argument(
+        "--stop-after", type=int, help="run through this one-based recipe step"
+    )
     run.add_argument("--wavelength-frame", choices=("air", "vacuum"), default="vacuum")
     args = parser.parse_args()
     try:
         if args.command == "run":
-            if args.output.resolve() in (
-                args.config.resolve(),
-                args.spectrum.resolve(),
-            ):
-                raise ValueError(
-                    "Output must differ from the recipe and input spectrum"
-                )
             _recipe_run(args)
             return
         if args.pixels and args.pixels.resolve() == args.output.resolve():

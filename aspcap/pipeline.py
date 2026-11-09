@@ -496,6 +496,59 @@ class Pipeline:
                 fits[item.species] = ElementFitResult(item.species, error=str(error))
         return fits
 
+    def fit_many(self, spectra, *, initial=None, star_ids=None):
+        """Run full pipelines for a list of Spec1D objects, returning BatchItems.
+
+        initial optionally supplies one complete mapping per spectrum. Omit it
+        to use the configured shared initial values. Processing is serial;
+        failures do not discard or prevent other spectra's results.
+        """
+        return self.run_many(spectra, step="fit", parameters=initial, star_ids=star_ids)
+
+    def run_many(self, spectra, *, step="fit", parameters=None, star_ids=None):
+        """Apply a named stage independently to many spectra.
+
+        step is prepare, normalize, estimate_initial, fit_global, fit_elements,
+        or fit. parameters optionally supplies one parameter mapping per input.
+        fit_global requires starts (or configured initial), and fit_elements
+        requires a global solution per input. Each BatchItem.value is the stage's
+        normal single-spectrum return type; BatchItem.error records exceptions.
+        No earlier stages are implicitly run for standalone stage calls.
+        """
+        from .batch import run_many
+
+        if step not in (
+            "prepare",
+            "normalize",
+            "estimate_initial",
+            "fit_global",
+            "fit_elements",
+            "fit",
+        ):
+            raise ValueError("Unknown pipeline stage")
+
+        def call(spec, identity, parameter):
+            if step == "fit":
+                return self.fit(
+                    spec,
+                    star_id=identity,
+                    **({} if parameter is None else {"initial": parameter}),
+                )
+            if step == "fit_elements":
+                if parameter is None:
+                    raise ValueError("fit_elements requires parameters per spectrum")
+                return self.fit_elements(spec, parameter, star_id=identity)
+            if step == "fit_global":
+                start = self.estimate_initial(spec) if parameter is None else parameter
+                return self.fit_global(spec, start)
+            if step == "estimate_initial":
+                return self.estimate_initial(
+                    spec, **({} if parameter is None else {"initial": parameter})
+                )
+            return getattr(self, step)(spec)
+
+        return run_many(spectra, call, star_ids=star_ids, parameters=parameters)
+
     def fit(
         self,
         spectrum,

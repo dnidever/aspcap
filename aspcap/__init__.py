@@ -8,6 +8,9 @@ from .pipeline import Pipeline, PipelineResult, ElementConfig, ElementFitResult
 
 __all__ = [
     "Grid",
+    "BatchItem",
+    "read_apstar",
+    "read_spectrum",
     "PipelineRecipe",
     "RecipeResult",
     "fit_abundance",
@@ -21,3 +24,6 @@ __all__ = [
 ]
 
 from .recipe import PipelineRecipe, RecipeResult
+
+from .batch import BatchItem
+from .readers import read_apstar, read_spectrum

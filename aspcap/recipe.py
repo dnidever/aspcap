@@ -29,6 +29,7 @@ class RecipeResult:
     history: list = field(default_factory=list)
     errors: dict = field(default_factory=dict)
     config: dict = field(default_factory=dict)
+    completed: bool = False
 
     @property
     def parameters(self):
@@ -43,7 +44,7 @@ class RecipeResult:
 
     @property
     def success(self):
-        return self.global_fit is not None and not self.errors
+        return self.completed and not self.errors
 
 
 class PipelineRecipe:
@@ -56,7 +57,8 @@ class PipelineRecipe:
     Each fit uses the latest normalized spectrum. A normalization after a fit
     requires a subsequent global fit before abundances.
 
-    This runner does not read apStar FITS files, calibrate survey results, select
+    The fit method accepts Spec1D objects; the CLI uses read_spectrum for FITS/CSV.
+    This runner does not calibrate survey results, select
     LSF groups automatically, or provide historical DR17 quality logic. The
     DR17-style example describes a modern approximation of the fitting stages.
     """
@@ -204,7 +206,15 @@ class PipelineRecipe:
             )[1]
         raise ValueError("Unknown weight source; use file, legacy_file, or dr17")
 
-    def fit(self, spectrum, *, initial=None, star_id="star", raise_on_error=False):
+    def fit(
+        self,
+        spectrum,
+        *,
+        initial=None,
+        star_id="star",
+        raise_on_error=False,
+        stop_after=None,
+    ):
         """Run the ordered recipe without mutating the input spectrum.
 
         initial optionally overrides the recipe's supplied starting parameters.
@@ -213,6 +223,12 @@ class PipelineRecipe:
         still win. Grid comparisons use unpenalized reduced chi-square and
         require identical wavelength sampling, labels, and wavelength frames.
         """
+        if stop_after is not None and (
+            isinstance(stop_after, bool)
+            or not isinstance(stop_after, int)
+            or not 1 <= stop_after <= len(self.config["steps"])
+        ):
+            raise ValueError("stop_after must be a one-based recipe step number")
         if not isinstance(spectrum, Spec1D):
             raise TypeError("Recipe input must be Spec1D")
         result = RecipeResult(spectrum.copy(), config=deepcopy(self.config))
@@ -223,6 +239,8 @@ class PipelineRecipe:
                 "type": step["type"],
                 "name": step.get("name", step["type"]),
             }
+            if stop_after is not None and number > stop_after:
+                break
             result.history.append(record)
             try:
                 kind = step["type"]
@@ -355,4 +373,25 @@ class PipelineRecipe:
                 record["status"] = "failed"
                 result.errors[str(number)] = str(error)
                 break
+        result.completed = not any(
+            record.get("status") == "failed" for record in result.history
+        )
         return result
+
+    def fit_many(self, spectra, *, initial=None, star_ids=None, stop_after=None):
+        """Run an ordered batch through a recipe or through step stop_after.
+
+        initial optionally contains one complete start mapping per input.
+        Returns BatchItems in input order with independent RecipeResults/errors.
+        A prefix ending before fitting can succeed with parameters=None.
+        """
+        from .batch import run_many
+
+        return run_many(
+            spectra,
+            lambda spec, identity, parameter: self.fit(
+                spec, initial=parameter, star_id=identity, stop_after=stop_after
+            ),
+            star_ids=star_ids,
+            parameters=initial,
+        )

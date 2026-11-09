@@ -71,12 +71,26 @@ Sources: `DR17 ASPCAP reader
 Current Python interface
 ------------------------
 
-The apStar-only scope above defines the input workflow; an automatic FITS
-reader and row-selection interface are not yet implemented in this package.
-Currently, extract the selected arrays before constructing a :doc:`spectrum`
-object or calling the fitting interfaces. Spec1D supports orders, errors,
-masks, metadata, and mapping of matching detector pixels onto a native grid;
-it does not automatically select FITS rows or interpret velocity headers.
+Use ``read_apstar`` to read a combined or individual-visit row:
+
+.. code-block:: python
+
+   from aspcap import read_apstar
+
+   spec = read_apstar("apStar-example.fits", row=0, grid=grid)
+
+``row`` is the actual zero-based FITS image row. The default is combined row 0;
+select visit rows explicitly using the release's layout. The reader uses flux,
+one-sigma errors, and flags in HDUs 1, 2, and 3 of an 8575-pixel apStar product.
+It reconstructs log10 wavelengths from CRVAL1, CDELT1, and CRPIX1. With ``grid``,
+it selects matching native vacuum Angstrom pixels without interpolation.
+Without ``grid``, it returns all apStar pixels.
+
+The default ``bad_bits=255`` excludes bits 0 through 7; warning bits are retained
+in ``spec.bitmask``. Nonfinite flux and nonpositive/nonfinite errors are also
+masked. Override bad_bits for an explicitly chosen pixel policy. Filename,
+header, row, and identity are retained. No LSF interpretation is performed.
+See :doc:`batch` for lists of FITS files and lists of Spec1D objects.
 
 Preserve the original pixel flags, propagate uncertainties for any additional
 resampling, and avoid interpolating across detector gaps. Previously resampled

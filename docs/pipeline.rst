@@ -4,7 +4,7 @@ Run the Pipeline
 ``Pipeline`` coordinates spectrum validation, external normalization, global
 fitting, and the configured element fits. It reuses the existing ``Spec1D``,
 continuum, and ``Grid`` interfaces, preserving the input and intermediate results.
-This first version processes one prepared spectrum with explicitly supplied
+Each single-spectrum call processes one prepared spectrum with explicitly supplied
 grids, starting parameters, and element prescriptions.
 
 A complete example
@@ -155,17 +155,17 @@ No mini-grid generation, selection, or resampling is automatic.
 Current scope
 -------------
 
-This version accepts Spec1D inputs through Python. Automatic apStar FITS reading,
-row selection, initial-estimate prediction, coarse/multiple-start searches,
-LSF convolution configuration, arbitrary observed-spectrum resampling, batch
-execution, and a pipeline command-line interface remain separate future work.
-The existing command-line interface still fits one configured element.
+This interface accepts Spec1D inputs through Python. Use read_apstar for FITS
+input and the batch methods for lists of spectra. :doc:`pipeline-recipes`
+provides ordered stages, explicit multiple starts, and a command-line runner.
+Automatic row selection, initial-estimate prediction, LSF convolution
+configuration, and arbitrary observed-spectrum resampling remain future work.
 
 API reference
 -------------
 
 .. autoclass:: aspcap.Pipeline
-   :members: prepare, normalize, estimate_initial, fit_global, fit_elements, fit
+   :members: prepare, normalize, estimate_initial, fit_global, fit_elements, fit, fit_many, run_many
 
 .. autoclass:: aspcap.PipelineResult
    :members: parameters, abundances, residuals, success
@@ -212,3 +212,11 @@ Use :doc:`pipeline-recipes` to describe ordered stages in a JSON file,
 including repeated fits, multiple starts, and element weights/ties.
 The basic recipe runs on bundled test data; a DR17-style template provides
 a starting point for production grids.
+
+Many spectra
+------------
+
+``Pipeline.fit_many`` runs complete pipelines; ``Pipeline.run_many`` applies a
+single named stage to a list of Spec1D objects. ``PipelineRecipe.fit_many``
+executes recipes for a list, optionally stopping after a selected step.
+See :doc:`batch` for Python and command-line examples and failure handling.

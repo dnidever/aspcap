@@ -46,7 +46,8 @@ particular spectrum. The input object is copied. The command-line reader accepts
 a flat CSV with ``wavelength,flux,error`` and optional ``mask`` (1/true means bad).
 Use ``--wavelength-frame air`` for air wavelengths; vacuum is the default.
 The runner accepts prepared rest-frame spectra matching native grid pixels;
-it does not read apStar FITS or perform velocity correction.
+apStar FITS is also supported, including lists of files; see :doc:`batch`.
+No velocity correction is performed by the reader.
 
 File structure
 --------------
@@ -148,7 +149,7 @@ Reference
 ---------
 
 .. autoclass:: aspcap.PipelineRecipe
-   :members: read, example, fit
+   :members: read, example, fit, fit_many
 
 .. autoclass:: aspcap.RecipeResult
    :members: success, parameters, abundances

@@ -122,3 +122,7 @@ From a repository checkout:
 
    python -m pip install -r docs/requirements.txt
    python -m sphinx -W -b html docs docs/_build/html
+
+FITS input uses Astropy, installed automatically as an ASPCAP dependency.
+See :doc:`observed-spectra` for apStar row selection and :doc:`batch` for lists
+of input files.

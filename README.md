@@ -26,7 +26,7 @@ See the [DR17 ASPCAP description](https://www.sdss4.org/dr17/irspec/aspcap/) for
 
 ### What this package currently provides
 
-This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; automatic input reading and grid selection are not yet provided.
+This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; apStar FITS and prepared CSV readers are provided, while automatic survey grid selection is not. Batch methods process lists of spectra.
 
 The fit_abundance interface accepts supplied global parameters and a fixed continuum. It supports element-specific fractional pixel weights, inclusive wavelength windows, or both. Bad pixels receive zero weight; FERRE combines the remaining weights with measurement uncertainties. Pipeline element configurations support the same prescriptions. External normalization is separate from FERRE's internal continuum controls.
 
@@ -228,3 +228,23 @@ DR17 masks, 24 attempted species, and abundance ties. It requires production
 grids and label/start adjustments. It approximates the fitting stages and does
 not reproduce all historical FERRE settings, survey selection, or calibrations.
 See [Text Pipeline Recipes](https://aspcap.readthedocs.io/en/latest/pipeline-recipes.html).
+
+### Many spectra
+
+```python
+items = pipeline.fit_many([spec1, spec2])
+stage_items = pipeline.run_many([spec1, spec2], step="normalize")
+recipe_items = recipe.fit_many([spec1, spec2], stop_after=4)
+```
+
+Results stay in input order; each item has `value`, `error`, `star_id`, and
+`success`. Processing is serial and failures are isolated per spectrum.
+
+```sh
+aspcap run pipeline.json "star1.fits,star2.fits" --output results.json
+aspcap run pipeline.json @spectra.txt --output results.json
+```
+
+List files contain one path per line, relative to the list file. Use
+`--fits-row` to select the actual apStar row, and `--stop-after` to execute a
+recipe prefix. See [Batch Processing](https://aspcap.readthedocs.io/en/latest/batch.html).
