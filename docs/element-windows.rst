@@ -6,6 +6,12 @@ abundance. Windows define which wavelength intervals are considered; pixel
 weights control their relative contribution. Both work alongside the measured
 uncertainties and bad-pixel masks.
 
+**The recommended format uses one file per element**, containing wavelength
+and weight columns. Positive weights define the included windows and their
+relative importance; zero weights exclude pixels. No separate window file is
+needed. Interval-only files and the original DR17 files remain supported as
+alternatives.
+
 Windows, weights, and uncertainties
 -----------------------------------
 
@@ -100,7 +106,15 @@ Source commit, checksums, and the SDSS BSD license accompany the bundled files.
 Loading your own files
 ----------------------
 
-Use a two-column wavelength-weight table for new prescriptions. Rows contain
+Use one two-column wavelength-weight table for new prescriptions::
+
+   # wavelength_angstrom weight
+   15749.500 0.0
+   15749.718 0.4
+   15749.935 1.0
+   15750.153 0.7
+
+Rows contain
 wavelength and a finite nonnegative weight; zero excludes the pixel. Files use
 whitespace separators and may contain ``#`` comments. Wavelength units and the
 air/vacuum convention must match the model grid.

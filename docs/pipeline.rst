@@ -174,3 +174,12 @@ API reference
 
 .. autoclass:: aspcap.ElementFitResult
    :members: success, flags
+
+Element prescription files
+--------------------------
+
+The recommended storage format is one wavelength-weight file per element;
+see :doc:`element-windows`. Fractional element curves currently use
+``Grid.fit`` directly. Pipeline element configurations still accept unit-weight
+intervals, which can be loaded with ``aspcap.windows.load_windows``. These are
+alternative representations; users do not need to maintain both files.

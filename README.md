@@ -41,6 +41,27 @@ model files. FERRE is installed automatically as a dependency of ASPCAP
 starting with version 0.2.1. See the [Installation guide](https://aspcap.readthedocs.io/en/latest/installation.html)
 for platform support and verification.
 
+### Element windows and weights
+
+Use **one file per element** with two columns, wavelength and weight. Positive
+weights define the windows and their relative importance; zero excludes a
+pixel. No separate window file is required.
+
+```python
+from aspcap import windows
+
+_, weights = windows.load_weights("Mg_weights.txt", wavelength=grid.wavelengths)
+fit = grid.fit(spec, start=parameters, free_labels="ALPHA", weights=weights)
+```
+
+The label and abundance conversion depend on your grid. Original DR17 weights
+are bundled (`windows.load_dr17("Mg")`). Legacy one-column weights and simple
+interval files are also supported. See the
+[Element Windows and Weights guide](https://aspcap.readthedocs.io/en/latest/element-windows.html)
+for file formats, conversion, and fitting examples. Fractional element curves
+currently use `Grid.fit`; the abundance convenience interface and pipeline
+use unit-weight intervals.
+
 ## Try the worked example
 
 Install Python 3.9 or later; installing ASPCAP also installs FERRE.

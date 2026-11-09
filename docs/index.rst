@@ -38,6 +38,12 @@ Spectrum objects and external continuum estimation require no FERRE executable
 or Doppler model files. See :doc:`grid` for interpolation and global fitting,
 and :doc:`element-fitting` for the individual-element workflow.
 
+The recommended element prescription is **one wavelength-weight file per
+element**: positive weights define its windows, and zero excludes pixels.
+No separate window file is needed. Load it with
+``aspcap.windows.load_weights`` and pass the curve to ``Grid.fit``.
+See :doc:`element-windows` for the formats and legacy readers.
+
 .. toctree::
    :maxdepth: 2
    :caption: User guide
