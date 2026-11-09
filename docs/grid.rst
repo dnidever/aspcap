@@ -15,6 +15,9 @@ between nodes to evaluate trial models during a fit. The labels and their
 abundance conventions belong to the library; the wrapper does not infer them
 from a stellar type or element name.
 
+See :doc:`grid-downloads` to browse the online library catalog, inspect sizes,
+and download a complete grid in Python or from the command line.
+
 Historical grid families and the HGE plan
 --------------------------------------------------
 

@@ -140,6 +140,56 @@ def _recipe_run(args):
     print(f"Wrote {args.output}")
 
 
+def _grid_command(args):
+    """Browse, inspect, or download catalog selections."""
+    from . import grids
+
+    def size(value):
+        return "unknown" if value is None else f"{value/1024**3:.2f} GiB"
+
+    if args.grid_command == "list":
+        entries = grids.available(
+            family=args.family,
+            synthesis=args.synthesis,
+            instrument=args.instrument,
+            lsf=args.lsf,
+        )
+        if args.json:
+            print(json.dumps(entries, indent=2))
+        else:
+            print(f"{'ID':60} {'FAMILY':10} {'DIM':3} {'SIZE':12}")
+            for entry in entries:
+                print(
+                    f"{entry['id']:60} {entry['family']:10} {entry['dimensions']:3} {size(entry['size']):12}"
+                )
+            print(
+                f"{len(entries)} grids. Use 'aspcap grids info ID --online' to check a selection."
+            )
+    elif args.grid_command == "info":
+        print(json.dumps(grids.info(args.identifier, online=args.online), indent=2))
+    else:
+        for identifier in args.identifiers:
+            if args.dry_run:
+                entry = grids.info(identifier, online=True)
+                print(f"{identifier}: {size(entry['size'])}")
+                for file in entry["files"]:
+                    print(f"  {file['name']}  {size(file['size'])}  {file['url']}")
+            else:
+                previous = {}
+
+                def progress(name, done, total):
+                    # Report each file and at most one update per 256 MiB.
+                    mark = done // (256 * 1024**2)
+                    if previous.get(name) != mark or done == total:
+                        print(
+                            f"{name}: {size(done)} / {size(total)}",
+                            file=__import__("sys").stderr,
+                        )
+                        previous[name] = mark
+
+                print(grids.download(identifier, args.directory, progress=progress))
+
+
 def main():
     parser = argparse.ArgumentParser(prog="aspcap", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
@@ -181,8 +231,36 @@ def main():
         "--stop-after", type=int, help="run through this one-based recipe step"
     )
     run.add_argument("--wavelength-frame", choices=("air", "vacuum"), default="vacuum")
+    catalog = commands.add_parser(
+        "grids", help="browse and download existing spectral grids"
+    )
+    actions = catalog.add_subparsers(dest="grid_command", required=True)
+    listing = actions.add_parser("list", help="show the offline grid catalog")
+    for option in ("family", "synthesis", "instrument", "lsf"):
+        listing.add_argument("--" + option)
+    listing.add_argument("--json", action="store_true")
+    details = actions.add_parser("info", help="describe one grid")
+    details.add_argument("identifier")
+    details.add_argument(
+        "--online",
+        action="store_true",
+        help="check current remote sizes and availability",
+    )
+    transfer = actions.add_parser("download", help="download complete grid bundles")
+    transfer.add_argument("identifiers", nargs="+")
+    transfer.add_argument(
+        "--directory", type=Path, help="parent directory; defaults to the user cache"
+    )
+    transfer.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="show remote files and sizes without downloading payloads",
+    )
     args = parser.parse_args()
     try:
+        if args.command == "grids":
+            _grid_command(args)
+            return
         if args.command == "run":
             _recipe_run(args)
             return

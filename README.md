@@ -248,3 +248,24 @@ aspcap run pipeline.json @spectra.txt --output results.json
 List files contain one path per line, relative to the list file. Use
 `--fits-row` to select the actual apStar row, and `--stop-after` to execute a
 recipe prefix. See [Batch Processing](https://aspcap.readthedocs.io/en/latest/batch.html).
+
+### Browse and download production grids
+
+```sh
+aspcap grids list --family M-giant --synthesis synspec-nlte --instrument apogee-n
+aspcap grids download dr17-synspec-nlte-apogee-n-mg-a --dry-run
+aspcap grids download dr17-synspec-nlte-apogee-n-mg-a --directory grids
+```
+
+```python
+from aspcap import Grid, grids
+
+choices = grids.available(family="M-giant", synthesis="synspec-nlte")
+header = grids.download(choices[0]["id"], directory="grids")
+grid = Grid(header)
+```
+
+The catalog includes 162 verified DR17 bundles with source metadata and sizes.
+Production grids can require many GB; use `info` or `--dry-run` to inspect a
+selection. Downloads preserve complete file sets, resume interrupted transfers,
+and verify cached files. See [Browse and Download Grids](https://aspcap.readthedocs.io/en/latest/grid-downloads.html).

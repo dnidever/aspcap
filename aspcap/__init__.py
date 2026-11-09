@@ -3,11 +3,12 @@
 from .abundances import fit_abundance
 from .ferre import Grid
 from .spectrum import Spec1D
-from . import continuum, windows
+from . import continuum, windows, grids
 from .pipeline import Pipeline, PipelineResult, ElementConfig, ElementFitResult
 
 __all__ = [
     "Grid",
+    "grids",
     "BatchItem",
     "read_apstar",
     "read_spectrum",

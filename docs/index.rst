@@ -53,6 +53,7 @@ See :doc:`element-windows` for the formats and legacy readers.
    observed-spectra
    ferre
    grid
+   grid-downloads
    lsf
    continuum
    initial-estimates
