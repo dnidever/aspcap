@@ -173,7 +173,9 @@ Current abundance interface
 ---------------------------
 
 ``Grid.fit_abundance`` and the compatibility function ``aspcap.fit_abundance``
-currently use **unit weights inside the supplied windows and zero outside**.
+accept **fractional pixel weights, wavelength windows, or both**.
+With windows alone, included pixels receive unit weights. With both, the
+windows restrict the supplied curve; they do not replace its fractional values.
 Masked pixels, nonfinite flux, and nonpositive or nonfinite errors are excluded.
 At least two usable window pixels are required; that count alone does not
 establish abundance sensitivity or measurement reliability.
@@ -194,8 +196,31 @@ Use it with ``grid.fit_abundance(..., **element)`` or include it in a
 continuum, global parameters, and star identifier as shown in
 :doc:`element-fitting`. The pipeline preserves zero global weights as element
 exclusions; positive global weight magnitudes affect only the global fit.
-Arbitrary element-specific weight curves are not yet accepted by these
-abundance interfaces.
+For a single-file element prescription:
+
+.. code-block:: python
+
+   import numpy as np
+   from aspcap import windows
+
+   _, weights = windows.load_weights("Mg_weights.txt", wavelength=grid.wavelengths)
+   result, pixels = grid.fit_abundance(
+       spec.wave, spec.flux, spec.err, np.ones(grid.npix), parameters,
+       star_id="star", species="Mg", label="ALPHA",
+       weights=weights, add_labels=("METALS",),
+   )
+
+Use a fixed global continuum instead of ones for unnormalized inputs. Pipeline
+configurations accept the same ``weights`` array and optional ``windows``.
+The number of pixels used counts positive weights, not their sum.
+
+The backend writes these values to FERRE's ``FILTERFILE`` and supplies
+one-sigma errors separately. FERRE combines them as weight divided by variance;
+ASPCAP does not square the element weights or fold them into the errors.
+This follows the weight-file mechanism in
+`DR17 abundance runs <https://github.com/sdss/apogee/blob/e134409dc14b20f69e68a0d4d34b2c1b5056a901/python/apogee/aspcap/aspcap.py#L889-L940>`_
+and
+`Astra abundance runs <https://github.com/andycasey/astra/blob/5e64e310a98f189091a0d5b1aee34952a9062872/src/astra/pipelines/aspcap/abundances.py#L140-L155>`_.
 
 Custom pixel weights with Grid.fit
 ----------------------------------

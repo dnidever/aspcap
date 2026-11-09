@@ -31,12 +31,13 @@ library and an explicit abundance-scale convention are required.
 Windows, weights, and masks
 ---------------------------
 
-The abundance interface uses unit weights inside inclusive windows and zero
-outside, with unusable pixels excluded by the mask and uncertainty checks.
+The abundance interface accepts fractional pixel weights, inclusive windows,
+or both. Windows restrict the curve when both are supplied; windows alone
+use unit weights. Masks and uncertainty checks exclude unusable pixels.
 The recommended element prescription is **one wavelength-weight file per
 element**: positive weights define its windows, and zero excludes pixels.
 No separate window file is needed. Load it with
-``aspcap.windows.load_weights`` and pass the curve to ``Grid.fit``.
+``aspcap.windows.load_weights`` and pass the curve as ``weights=`` to ``Grid.fit_abundance``.
 See :doc:`element-windows` for the formats and legacy readers.
 
 A runnable example

@@ -8,7 +8,6 @@ import unittest
 
 from aspcap import Grid, fit_abundance
 
-
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 
 
@@ -17,14 +16,22 @@ class AbundanceTest(unittest.TestCase):
         self.grid = Grid.read(EXAMPLES / "toy-grid.dat")
         with (EXAMPLES / "toy-spectrum.csv").open() as file:
             rows = list(csv.DictReader(file))
-        self.columns = [[float(row[key]) for row in rows]
-                        for key in ("wavelength", "flux", "error", "continuum")]
+        self.columns = [
+            [float(row[key]) for row in rows]
+            for key in ("wavelength", "flux", "error", "continuum")
+        ]
 
     def fit(self, grid, windows=((15002, 15005),), **options):
         return fit_abundance(
-            grid, *self.columns, {"ALPHA": 0, "METALS": -0.25},
-            star_id="synthetic-star", species="Mg", label="ALPHA",
-            windows=windows, add_labels=("METALS",), **options,
+            grid,
+            *self.columns,
+            {"ALPHA": 0, "METALS": -0.25},
+            star_id="synthetic-star",
+            species="Mg",
+            label="ALPHA",
+            windows=windows,
+            add_labels=("METALS",),
+            **options,
         )
 
     def test_rejects_off_grid_wavelengths(self):
@@ -37,18 +44,64 @@ class AbundanceTest(unittest.TestCase):
             self.fit(self.grid, windows=((15020, 15030),))
 
     def test_bad_mask_shape(self):
-        with self.assertRaisesRegex(ValueError, 'mask'):
+        with self.assertRaisesRegex(ValueError, "mask"):
             self.fit(self.grid, mask=[True])
 
     def test_real_ferre_mask(self):
         executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
         if not executable:
             self.skipTest("FERRE unavailable")
-        result, pixels = self.fit(self.grid, executable=executable,
-                                  mask=[False,False,True,False,False,False,False,False])
-        self.assertEqual(result['pixels_used'],3)
-        self.assertEqual(list(pixels)[2][-1],0)
-        self.assertAlmostEqual(result['raw_value'],.2,delta=.003)
+        result, pixels = self.fit(
+            self.grid,
+            executable=executable,
+            mask=[False, False, True, False, False, False, False, False],
+        )
+        self.assertEqual(result["pixels_used"], 3)
+        self.assertEqual(list(pixels)[2][-1], 0)
+        self.assertAlmostEqual(result["raw_value"], 0.2, delta=0.003)
+
+    def test_fractional_weights_match_direct_ferre_fit(self):
+        import numpy as np
+
+        executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
+        if not executable:
+            self.skipTest("FERRE unavailable")
+        self.grid.executable = executable
+        self.columns[1][2] += 0.02
+        supplied = np.array([0, 0, 0.15, 1, 0.7, 0.2, 0, 0])
+        original = supplied.copy()
+        result, pixels = self.fit(
+            self.grid, windows=None, weights=supplied, executable=executable
+        )
+        rows = list(pixels)
+        direct = self.grid.fit(
+            [x[1] for x in rows],
+            [x[2] for x in rows],
+            {"ALPHA": 0, "METALS": -0.25},
+            free_labels="ALPHA",
+            weights=supplied,
+            executable=executable,
+        )
+        self.assertEqual(result["pixels_used"], 4)
+        self.assertAlmostEqual(
+            result["raw_value"], direct.parameters["ALPHA"], places=6
+        )
+        np.testing.assert_array_equal([x[-1] for x in rows], supplied)
+        np.testing.assert_array_equal(supplied, original)
+        _, restricted = self.fit(
+            self.grid,
+            weights=supplied,
+            windows=np.array([[15003, 15005]]),
+            executable=executable,
+        )
+        self.assertEqual(list(restricted)[2][-1], 0)
+
+    def test_rejects_invalid_element_weights(self):
+        for weights in ([1], [float("nan")] * 8, [-1] * 8, [0] * 8):
+            with self.assertRaises(ValueError):
+                self.fit(self.grid, windows=None, weights=weights)
+        with self.assertRaises(ValueError):
+            self.fit(self.grid, windows=None)
 
     def test_real_ferre(self):
         executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")
@@ -62,15 +115,21 @@ class AbundanceTest(unittest.TestCase):
             binary.with_suffix(".unf").write_bytes(struct.pack(f"={len(flux)}f", *flux))
             for grid in (self.grid, Grid.read(binary)):
                 with self.subTest(binary=grid.binary):
-                    result, pixels = self.fit(grid, executable=executable, run_root=root)
+                    result, pixels = self.fit(
+                        grid, executable=executable, run_root=root
+                    )
                     self.assertAlmostEqual(result["raw_value"], 0.2, places=3)
                     self.assertAlmostEqual(result["abundance"], -0.05, places=3)
                     self.assertGreater(result["conditional_error"], 0)
                     rows = list(pixels)
-                    self.assertEqual([row[-1] for row in rows], [0, 0, 1, 1, 1, 1, 0, 0])
+                    self.assertEqual(
+                        [row[-1] for row in rows], [0, 0, 1, 1, 1, 1, 0, 0]
+                    )
                     # This pixel depends on frozen METALS and must not pull the fit.
                     self.assertAlmostEqual(rows[1][3], 1.025, places=5)
-            self.assertEqual(sorted(p.name for p in Path(root).iterdir()), ["toy.hdr", "toy.unf"])
+            self.assertEqual(
+                sorted(p.name for p in Path(root).iterdir()), ["toy.hdr", "toy.unf"]
+            )
 
     def test_grid_model_and_fit(self):
         executable = os.environ.get("ASPCAP_TEST_FERRE") or shutil.which("ferre")

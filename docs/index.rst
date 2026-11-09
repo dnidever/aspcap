@@ -21,7 +21,7 @@ What this package currently provides
 
 This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; automatic input reading and grid selection are not yet provided.
 
-The current fit_abundance interface accepts supplied global parameters and a fixed continuum. It uses unit weights inside the selected windows and zero outside, excludes bad pixels, and uses measurement uncertainties in the fit. Arbitrary element-specific weight curves are not yet exposed by this interface; Grid.fit accepts explicit pixel weights. External normalization is separate from FERRE's internal continuum controls.
+The fit_abundance interface accepts supplied global parameters and a fixed continuum. It supports element-specific fractional pixel weights, inclusive wavelength windows, or both. Bad pixels receive zero weight; FERRE combines the remaining weights with measurement uncertainties. Pipeline element configurations support the same prescriptions. External normalization is separate from FERRE's internal continuum controls.
 
 See :doc:`ferre` for the fitting engine, its internal processing options,
 and the FERRE manual.
@@ -41,7 +41,7 @@ and :doc:`element-fitting` for the individual-element workflow.
 The recommended element prescription is **one wavelength-weight file per
 element**: positive weights define its windows, and zero excludes pixels.
 No separate window file is needed. Load it with
-``aspcap.windows.load_weights`` and pass the curve to ``Grid.fit``.
+``aspcap.windows.load_weights`` and pass the curve to ``Grid.fit_abundance`` or a pipeline element configuration.
 See :doc:`element-windows` for the formats and legacy readers.
 
 .. toctree::

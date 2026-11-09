@@ -72,6 +72,21 @@ class PipelineTest(unittest.TestCase):
         result.spectrum.flux[0] = 99
         assert_array_equal(spec.flux, original.flux)
 
+    def test_fractional_element_weights_and_global_exclusions(self):
+        spec = self.synthetic()
+        weights = np.array([0, 0, 0.2, 1, 0.7, 0.3, 0, 0])
+        config = ElementConfig("Mg", "ALPHA", weights=weights, add_labels=("METALS",))
+        weights[2] = 99  # Configuration holds its own immutable copy.
+        p = Pipeline(self.grid, [config], initial=TRUTH, continuum=np.full(8, 2.0))
+        global_weights = np.ones(8) * 4
+        global_weights[3] = 0
+        result = p.fit(spec, weights=global_weights)
+        self.assertTrue(result.success, result.errors)
+        actual = [row[-1] for row in result.element_fits["Mg"].pixels]
+        assert_allclose(actual, [0, 0, 0.2, 0, 0.7, 0.3, 0, 0])
+        self.assertEqual(result.element_fits["Mg"].result["pixels_used"], 3)
+        self.assertEqual(result.config["elements"][0]["weights"], config.weights)
+
     def test_mapping_elements_skip_normalization_and_global_only(self):
         p = Pipeline(
             self.grid,

@@ -88,7 +88,7 @@ The original and applied continuum are retained for inspection.
 Bad-pixel masks and invalid flux/errors are excluded by the shared Grid input
 validation. Zero global weights also exclude pixels from element fits.
 Positive global weight magnitudes apply only to the global fit; element fits
-currently use unit weights inside their configured windows. Global weights
+use their own fractional weights, restricted by any configured windows. Global weights
 do not replace the spectrum mask used during continuum estimation. Set the
 Spec1D mask for pixels that should also be excluded from that stage.
 
@@ -179,7 +179,18 @@ Element prescription files
 --------------------------
 
 The recommended storage format is one wavelength-weight file per element;
-see :doc:`element-windows`. Fractional element curves currently use
-``Grid.fit`` directly. Pipeline element configurations still accept unit-weight
-intervals, which can be loaded with ``aspcap.windows.load_windows``. These are
-alternative representations; users do not need to maintain both files.
+see :doc:`element-windows`. Load the file against the element grid, then use
+an element configuration such as:
+
+.. code-block:: python
+
+   from aspcap import windows
+
+   _, mg_weights = windows.load_weights("Mg_weights.txt", wavelength=grid.wavelengths)
+   element = dict(species="Mg", label="ALPHA", weights=mg_weights,
+                  add_labels=("METALS",))
+   pipeline = Pipeline(grid, [element], initial=parameters)
+
+Optional ``windows`` restrict the curve. Interval-only prescriptions retain
+unit weights and can be loaded with ``windows.load_windows``. These are
+alternatives; users do not need to maintain both files.

@@ -46,7 +46,7 @@ Element configuration
 The recommended element prescription is **one wavelength-weight file per
 element**: positive weights define its windows, and zero excludes pixels.
 No separate window file is needed. Load it with
-``aspcap.windows.load_weights`` and pass the curve to ``Grid.fit``.
+``aspcap.windows.load_weights`` and pass the curve as ``weights=`` to ``Grid.fit_abundance``.
 See :doc:`element-windows` for the formats and legacy readers.
 
 .. literalinclude:: ../examples/mg.json

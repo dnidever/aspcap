@@ -28,7 +28,7 @@ See the [DR17 ASPCAP description](https://www.sdss4.org/dr17/irspec/aspcap/) for
 
 This HGE package provides Spec1D objects, external continuum estimators, a Grid interface for FERRE interpolation and fits with multiple free labels, and fit_abundance plus a command-line interface for individual-element fits. A global fit can be performed with Grid.fit using a suitable supplied grid. Pipeline now coordinates normalization, global fitting, and the configured element fits for one prepared spectrum. Grids, starting parameters, and continuum settings are supplied explicitly; automatic input reading and grid selection are not yet provided.
 
-The current fit_abundance interface accepts supplied global parameters and a fixed continuum. It uses unit weights inside the selected windows and zero outside, excludes bad pixels, and uses measurement uncertainties in the fit. Arbitrary element-specific weight curves are not yet exposed by this interface; Grid.fit accepts explicit pixel weights. External normalization is separate from FERRE's internal continuum controls.
+The fit_abundance interface accepts supplied global parameters and a fixed continuum. It supports element-specific fractional pixel weights, inclusive wavelength windows, or both. Bad pixels receive zero weight; FERRE combines the remaining weights with measurement uncertainties. Pipeline element configurations support the same prescriptions. External normalization is separate from FERRE's internal continuum controls.
 
 Install the latest release from PyPI with:
 
@@ -58,9 +58,8 @@ The label and abundance conversion depend on your grid. Original DR17 weights
 are bundled (`windows.load_dr17("Mg")`). Legacy one-column weights and simple
 interval files are also supported. See the
 [Element Windows and Weights guide](https://aspcap.readthedocs.io/en/latest/element-windows.html)
-for file formats, conversion, and fitting examples. Fractional element curves
-currently use `Grid.fit`; the abundance convenience interface and pipeline
-use unit-weight intervals.
+for file formats, conversion, and fitting examples. Both `Grid.fit_abundance` and pipeline element configurations accept the
+loaded fractional weights.
 
 ## Try the worked example
 

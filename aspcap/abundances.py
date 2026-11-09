@@ -15,7 +15,8 @@ def fit_abundance(
     star_id,
     species,
     label,
-    windows,
+    windows=None,
+    weights=None,
     add_labels=(),
     executable=None,
     keep_runs=False,
@@ -30,7 +31,9 @@ def fit_abundance(
 
     Inputs are in the grid's wavelength units and air/vacuum convention.
     The optional mask uses True for unusable pixels.
-    Windows are inclusive (lower, upper) pairs with unit weights. The optional
+    Windows are optional inclusive (lower, upper) pairs. Supply windows, weights,
+    or both: windows restrict the supplied fractional weights. Weights must be
+    finite nonnegative native-pixel values, separate from inverse variance. The optional
     add_labels are fixed global-fit coordinates added to report [X/H].
     """
     npix = len(grid.wavelengths)
@@ -58,15 +61,35 @@ def fit_abundance(
         raise ValueError(
             "Abundance conversion labels must be distinct fixed grid labels"
         )
-    windows = tuple(tuple(pair) for pair in windows)
-    if not windows or any(
-        not (isfinite(lo) and isfinite(hi) and lo <= hi) for lo, hi in windows
+    if windows is None and weights is None:
+        raise ValueError("Provide element windows or weights")
+    intervals = None if windows is None else np.asarray(windows, dtype=float)
+    if intervals is not None and (
+        intervals.ndim != 2
+        or intervals.shape[1] != 2
+        or not intervals.size
+        or not np.all(np.isfinite(intervals))
+        or np.any(intervals[:, 0] > intervals[:, 1])
     ):
-        raise ValueError("Provide one or more finite wavelength windows (lower, upper)")
+        raise ValueError("Provide finite wavelength windows (lower, upper)")
+    element_weights = (
+        np.ones(npix) if weights is None else np.asarray(weights, dtype=float).copy()
+    )
+    if element_weights.shape != (npix,) or not np.all(
+        np.isfinite(element_weights) & (element_weights >= 0)
+    ):
+        raise ValueError(
+            "weights must have one finite nonnegative value per native pixel"
+        )
+    if intervals is not None:
+        selected = np.zeros(npix, dtype=bool)
+        for lo, hi in intervals:
+            selected |= (np.asarray(wavelength) >= lo) & (np.asarray(wavelength) <= hi)
+        element_weights[~selected] = 0
 
     normalized_flux, normalized_error, weights = [], [], []
-    for wave, value, sigma, scale, bad in zip(
-        wavelength, flux, error, continuum, badmask
+    for wave, value, sigma, scale, bad, weight in zip(
+        wavelength, flux, error, continuum, badmask, element_weights
     ):
         if not isfinite(scale) or scale <= 0:
             raise ValueError("Global continuum values must be finite and positive")
@@ -74,8 +97,8 @@ def fit_abundance(
         good = not bad and isfinite(value) and isfinite(sigma) and sigma > 0
         normalized_flux.append(value if good else 1.0)
         normalized_error.append(sigma if good else 1e10)
-        weights.append(int(good and any(lo <= wave <= hi for lo, hi in windows)))
-    pixels_used = sum(weights)
+        weights.append(float(weight) if good else 0.0)
+    pixels_used = sum(w > 0 for w in weights)
     if pixels_used < 2:
         raise ValueError(
             f"{species}: fewer than two usable pixels in the element windows"

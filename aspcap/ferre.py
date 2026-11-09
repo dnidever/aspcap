@@ -582,7 +582,8 @@ class Grid:
         star_id,
         species,
         label,
-        windows,
+        windows=None,
+        weights=None,
         add_labels=(),
         executable=None,
         keep_runs=False,
@@ -604,9 +605,12 @@ class Grid:
             Spectrum identifier and target element name recorded in the result.
         label : str
             Exact grid label of the abundance dimension to vary.
-        windows : sequence of (float, float)
-            Inclusive wavelength intervals. Usable pixels inside their union
-            have unit weights; other pixels are excluded.
+        windows : sequence of (float, float), optional
+            Inclusive intervals restricting the fit. Supply windows or weights.
+        weights : sequence of float, optional
+            Finite nonnegative values per native pixel, separate from inverse
+            variance. Defaults to unit weights inside windows. With both,
+            windows restrict the supplied weights. Bad pixels receive zero.
         add_labels : sequence of str, optional
             Distinct fixed logarithmic labels added to the fitted coordinate
             to report [X/H]. Empty when the free label already represents [X/H].
@@ -649,6 +653,7 @@ class Grid:
             species=species,
             label=label,
             windows=windows,
+            weights=weights,
             add_labels=add_labels,
             executable=executable,
             keep_runs=keep_runs,

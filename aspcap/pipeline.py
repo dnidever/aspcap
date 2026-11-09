@@ -28,8 +28,11 @@ class ElementConfig:
 
     species, label : str
         Result name and exact free grid label. All other labels stay fixed.
-    windows : sequence of (float, float)
-        Inclusive element windows in the library wavelength convention.
+    windows : sequence of (float, float), optional
+        Inclusive intervals restricting element weights. Supply windows or weights.
+    weights : sequence of float, optional
+        Fractional native-pixel weights for this element. Bad pixels and zero
+        global weights are excluded; positive global magnitudes are not applied.
     add_labels : sequence of str, optional
         Fixed logarithmic coordinates added to report [X/H].
     grid : Grid or path-like, optional
@@ -42,22 +45,41 @@ class ElementConfig:
 
     species: str
     label: str
-    windows: tuple
+    windows: object = None
     add_labels: tuple = ()
     grid: object = field(default=None, repr=False)
     initial: object = None
+    weights: object = field(default=None, repr=False)
 
     def __post_init__(self):
         if not isinstance(self.species, str) or not self.species.strip():
             raise ValueError("Element species must be a nonempty name")
         if not isinstance(self.label, str) or not self.label.strip():
             raise ValueError("Element label must be a nonempty name")
-        windows = tuple(tuple(float(v) for v in pair) for pair in self.windows)
-        if not windows or any(
-            len(pair) != 2 or not all(map(isfinite, pair)) or pair[0] > pair[1]
-            for pair in windows
+        windows = (
+            None
+            if self.windows is None
+            else tuple(tuple(float(v) for v in pair) for pair in self.windows)
+        )
+        if windows is not None and (
+            not windows
+            or any(
+                len(pair) != 2 or not all(map(isfinite, pair)) or pair[0] > pair[1]
+                for pair in windows
+            )
         ):
             raise ValueError("Element windows must contain finite (lower, upper) pairs")
+        if windows is None and self.weights is None:
+            raise ValueError("Supply element windows or weights")
+        if self.weights is not None:
+            weights = np.asarray(self.weights, dtype=float)
+            if (
+                weights.ndim != 1
+                or not weights.size
+                or not np.all(np.isfinite(weights) & (weights >= 0))
+            ):
+                raise ValueError("Element weights must be a finite nonnegative vector")
+            object.__setattr__(self, "weights", tuple(weights))
         labels = tuple(self.add_labels)
         if len(set(labels)) != len(labels) or self.label in labels:
             raise ValueError("add_labels must be distinct fixed labels")
@@ -206,7 +228,7 @@ class Pipeline:
     weights : array-like, optional
         Global weights in reconstructed native pixel order. Zero weights also
         exclude pixels from element fits; positive magnitudes affect only the
-        global fit, since element fits currently use unit-weight windows.
+        global fit, since element fits use their own windows and weights.
     keep_runs : bool, optional
         Retain successful FERRE run files for both fitting stages.
     run_root : path-like, optional
@@ -440,6 +462,7 @@ class Pipeline:
                     species=item.species,
                     label=item.label,
                     windows=item.windows,
+                    weights=item.weights,
                     add_labels=item.add_labels,
                     mask=mask,
                     keep_runs=self.keep_runs,
@@ -498,6 +521,7 @@ class Pipeline:
                         species=e.species,
                         label=e.label,
                         windows=e.windows,
+                        weights=e.weights,
                         add_labels=e.add_labels,
                         initial=e.initial,
                         grid_paths=tuple(
