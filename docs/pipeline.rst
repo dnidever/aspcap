@@ -67,7 +67,7 @@ Inputs and configuration
 * **Free labels and weights:** ``free_labels`` controls the global fit;
   ``weights`` is a native-pixel vector. The default varies all supplied grid
   labels. Microturbulence relations must be encoded consistently in the grid;
-  the pipeline does not introduce parameter tying.
+  explicit ``ties`` can impose a validated relation; none is chosen automatically.
 
 For an estimated continuum, replace the supplied array with, for example,
 ``continuum={"method": "chebyshev", "degree": 4, "clip": (3, 3)}``.
@@ -194,3 +194,13 @@ an element configuration such as:
 Optional ``windows`` restrict the curve. Interval-only prescriptions retain
 unit weights and can be loaded with ``windows.load_windows``. These are
 alternatives; users do not need to maintain both files.
+
+Parameter ties
+--------------
+
+Set ``ties=`` and ``tie_mode=`` on ``Pipeline`` for the global fit. Set them
+separately on an ``ElementConfig`` or element dictionary for abundance fits.
+Both use the :doc:`grid` tie syntax; the default mode is relative. Ties are
+recorded in the result configuration. A metallicity-compensation example is
+shown in :doc:`element-fitting`. Untied labels retain the usual fixed/free
+behavior.

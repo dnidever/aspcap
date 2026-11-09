@@ -19,6 +19,51 @@ from .spectrum import Spec1D
 from ._grid_headers import read_library, Segment
 
 
+def _parameter_ties(grid, ties, free_labels):
+    """Validate affine ties; dependent labels may not reference other ties."""
+    if ties is None:
+        return {}
+    if not isinstance(ties, Mapping):
+        raise ValueError("ties must map dependent labels to coefficient mappings")
+    result = {}
+    for target, specification in ties.items():
+        if target not in grid.labels or target in free_labels:
+            raise ValueError("Tied labels must exist and must not be free")
+        if not isinstance(specification, Mapping):
+            raise ValueError("Each tie must be a coefficient mapping")
+        if "coefficients" in specification:
+            if set(specification) - {"coefficients", "offset"}:
+                raise ValueError("Unknown tie specification keys")
+            coefficients = specification["coefficients"]
+            offset = float(specification.get("offset", 0))
+        else:
+            coefficients, offset = specification, 0.0
+        if not isinstance(coefficients, Mapping):
+            raise ValueError("Tie coefficients must map labels to finite numbers")
+        coefficients = {name: float(value) for name, value in coefficients.items()}
+        if any(name not in grid.labels or name in ties for name in coefficients):
+            raise ValueError("Tie sources must exist and cannot be dependent labels")
+        if not all(map(isfinite, [offset, *coefficients.values()])):
+            raise ValueError("Tie coefficients and offsets must be finite")
+        result[target] = {"coefficients": coefficients, "offset": offset}
+    return result
+
+
+def _apply_ties(parameters, initial, ties, mode):
+    result = dict(parameters)
+    for target, spec in ties.items():
+        result[target] = (
+            spec["offset"]
+            + sum(
+                coefficient
+                * (parameters[name] - (initial[name] if mode == "relative" else 0))
+                for name, coefficient in spec["coefficients"].items()
+            )
+            + (initial[target] if mode == "relative" else 0)
+        )
+    return result
+
+
 class Grid:
     """Inspect, interpolate, and fit a synthetic spectral library with FERRE.
 
@@ -474,6 +519,8 @@ class Grid:
         *,
         free_labels=None,
         weights=None,
+        ties=None,
+        tie_mode="relative",
         executable=None,
         keep_runs=False,
         run_root=None,
@@ -504,6 +551,16 @@ class Grid:
             Nonnegative finite weights with one entry per native pixel. Zero
             excludes a pixel. Defaults to unit weights. More pixels must have
             positive weight than there are free labels.
+        ties : mapping, optional
+            Dependent label -> {source_label: coefficient}. For an intercept,
+            use {"coefficients": {...}, "offset": value}. Dependent labels
+            cannot be free or reference other dependent labels. With omitted
+            free_labels, only independent labels are varied.
+        tie_mode : {'relative', 'absolute'}, optional
+            Relative (default): dependent = initial dependent + offset +
+            sum(coefficient * (source - initial source)). Absolute: dependent =
+            offset + sum(coefficient * source). Units are physical grid labels.
+            Tied uncertainties are returned as None, not propagated errors.
         executable : str or path-like, optional
             Override this grid's executable for the fit.
         keep_runs : bool, optional
@@ -534,13 +591,20 @@ class Grid:
             start = tuple((lo + hi) / 2 for lo, hi in self.ranges)
         start = self._parameters(start)
         if free_labels is None:
-            free_labels = self.labels
+            free_labels = tuple(
+                label for label in self.labels if label not in (ties or {})
+            )
         elif isinstance(free_labels, str):
             free_labels = (free_labels,)
         else:
             free_labels = tuple(free_labels)
         if not free_labels or len(set(free_labels)) != len(free_labels):
             raise ValueError("Supply one or more distinct free grid labels")
+        if tie_mode not in ("relative", "absolute"):
+            raise ValueError("tie_mode must be 'relative' or 'absolute'")
+        ties = _parameter_ties(self, ties, free_labels)
+        initial = dict(zip(self.labels, start))
+        self._parameters(_apply_ties(initial, initial, ties, tie_mode))
         axes = tuple(self.labels.index(label) for label in free_labels)
         if weights is None:
             weights = (1,) * self.npix
@@ -566,6 +630,8 @@ class Grid:
             flux=flux,
             error=error,
             weights=weights,
+            ties=ties,
+            tie_mode=tie_mode,
             executable=self.executable if executable is None else executable,
             keep_runs=keep_runs,
             run_root=run_root,
@@ -584,6 +650,8 @@ class Grid:
         label,
         windows=None,
         weights=None,
+        ties=None,
+        tie_mode="relative",
         add_labels=(),
         executable=None,
         keep_runs=False,
@@ -600,7 +668,7 @@ class Grid:
             finite positive continuum; use ones for already normalized arrays.
         parameters : mapping
             Full global parameter solution, including a starting value for the
-            one free abundance label. Other labels remain fixed.
+            one free abundance label. Other labels remain fixed unless tied.
         star_id, species : str
             Spectrum identifier and target element name recorded in the result.
         label : str
@@ -611,8 +679,13 @@ class Grid:
             Finite nonnegative values per native pixel, separate from inverse
             variance. Defaults to unit weights inside windows. With both,
             windows restrict the supplied weights. Bad pixels receive zero.
+        ties : mapping, optional
+            Affine dependent-label relations, as in Grid.fit. Other labels
+            remain fixed unless tied. No default abundance ties are imposed.
+        tie_mode : {'relative', 'absolute'}, optional
+            Relative to the supplied global parameters by default; see Grid.fit.
         add_labels : sequence of str, optional
-            Distinct fixed logarithmic labels added to the fitted coordinate
+            Distinct logarithmic labels added to the fitted coordinate
             to report [X/H]. Empty when the free label already represents [X/H].
         executable : path-like, optional
             Override this grid's FERRE executable for this fit.
@@ -654,6 +727,8 @@ class Grid:
             label=label,
             windows=windows,
             weights=weights,
+            ties=ties,
+            tie_mode=tie_mode,
             add_labels=add_labels,
             executable=executable,
             keep_runs=keep_runs,
@@ -711,6 +786,8 @@ def _execute(
     flux=None,
     error=None,
     weights=None,
+    ties=None,
+    tie_mode="relative",
     executable,
     keep_runs=False,
     run_root=None,
@@ -758,6 +835,24 @@ def _execute(
  FILTERFILE='weights.dat'
  OPFILE='fit.opf'
 """
+        tie_controls = ""
+        if ties:
+            lines = [
+                f" NTIE={len(ties)}",
+                f" TYPETIE={1 if tie_mode == 'relative' else 0}",
+            ]
+            for i, (target, spec) in enumerate(ties.items(), 1):
+                lines.extend(
+                    [
+                        f" INDTIE({i})={grid.labels.index(target)+1}",
+                        f" TTIE0({i})={spec['offset']:.17e}",
+                    ]
+                )
+                for source, coefficient in spec["coefficients"].items():
+                    lines.append(
+                        f" TTIE({i},{grid.labels.index(source)+1})={coefficient:.17e}"
+                    )
+            tie_controls = "\n".join(lines) + "\n"
         (directory / "input.nml").write_text(
             f"""&LISTA
  NDIM={ndim}
@@ -780,7 +875,7 @@ def _execute(
  ERRBAR=1
  COVPRINT=1
  PFILE='start.ipf'
-{fit_files} OFFILE='model.mdl'
+{tie_controls}{fit_files} OFFILE='model.mdl'
 /
 """,
             encoding="ascii",
@@ -822,8 +917,35 @@ def _execute(
             for i, label in enumerate(grid.labels):
                 lo, hi = grid.ranges[i]
                 tolerance = max(5e-5 * abs(params[i]), 3e-6 * (hi - lo), 1e-8)
-                if i not in axes and abs(params[i] - rows[0][i]) > tolerance:
+                if (
+                    i not in axes
+                    and label not in (ties or {})
+                    and abs(params[i] - rows[0][i]) > tolerance
+                ):
                     raise ValueError(f"FERRE changed frozen label {label!r}")
+            if ties:
+                # FERRE applies ties in its objective but writes untied frozen
+                # coordinates and a model evaluated at those coordinates.
+                physical = _apply_ties(
+                    dict(zip(grid.labels, params)),
+                    dict(zip(grid.labels, rows[0])),
+                    ties,
+                    tie_mode,
+                )
+                tied_row = grid._parameters(physical)
+                models = _execute(
+                    grid,
+                    (tied_row,),
+                    (),
+                    executable=executable,
+                    keep_runs=keep_runs,
+                    run_root=run_root,
+                )
+                params = tied_row
+                sigma = tuple(
+                    float("nan") if label in ties else value
+                    for label, value in zip(grid.labels, sigma)
+                )
             result = FerreFit(
                 dict(zip(grid.labels, params)),
                 {

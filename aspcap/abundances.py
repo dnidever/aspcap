@@ -17,6 +17,8 @@ def fit_abundance(
     label,
     windows=None,
     weights=None,
+    ties=None,
+    tie_mode="relative",
     add_labels=(),
     executable=None,
     keep_runs=False,
@@ -34,7 +36,8 @@ def fit_abundance(
     Windows are optional inclusive (lower, upper) pairs. Supply windows, weights,
     or both: windows restrict the supplied fractional weights. Weights must be
     finite nonnegative native-pixel values, separate from inverse variance. The optional
-    add_labels are fixed global-fit coordinates added to report [X/H].
+    add_labels are coordinates added to report [X/H], using their final values
+    if tied. Optional ties and tie_mode follow Grid.fit; none are imposed.
     """
     npix = len(grid.wavelengths)
     badmask = np.zeros(npix, bool) if mask is None else np.asarray(mask, dtype=bool)
@@ -110,6 +113,8 @@ def fit_abundance(
         parameters,
         free_labels=(label,),
         weights=weights,
+        ties=ties,
+        tie_mode=tie_mode,
         executable=executable,
         keep_runs=keep_runs,
         run_root=run_root,
@@ -125,14 +130,23 @@ def fit_abundance(
         flags.append("GRID_EDGE")
     if fit.errors[label] is None:
         flags.append("NO_UNCERTAINTY")
+    conversion_slope = 1.0
+    for name in add_labels:
+        if name in (ties or {}):
+            specification = ties[name]
+            coefficients = specification.get("coefficients", specification)
+            conversion_slope += float(coefficients.get(label, 0))
+    conditional_error = fit.errors[label]
+    if conditional_error is not None:
+        conditional_error *= abs(conversion_slope)
     result = {
         "star_id": star_id,
         "species": species,
         "grid_label": label,
         "raw_value": raw,
         "abundance_scale": f"[{species}/H]",
-        "abundance": raw + sum(parameters[name] for name in add_labels),
-        "conditional_error": fit.errors[label],
+        "abundance": raw + sum(fit.parameters[name] for name in add_labels),
+        "conditional_error": conditional_error,
         "ferre_reduced_chi2": fit.reduced_chi2,
         "pixels_used": pixels_used,
         "flags": "|".join(flags),

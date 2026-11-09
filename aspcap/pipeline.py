@@ -27,12 +27,16 @@ class ElementConfig:
     """An explicit element-fitting prescription.
 
     species, label : str
-        Result name and exact free grid label. All other labels stay fixed.
+        Result name and exact free grid label. Other labels stay fixed unless explicitly tied.
     windows : sequence of (float, float), optional
         Inclusive intervals restricting element weights. Supply windows or weights.
     weights : sequence of float, optional
         Fractional native-pixel weights for this element. Bad pixels and zero
         global weights are excluded; positive global magnitudes are not applied.
+    ties : mapping, optional
+        Dependent-label affine relations as in Grid.fit.
+    tie_mode : {"relative", "absolute"}, optional
+        Relative to initial parameters by default.
     add_labels : sequence of str, optional
         Fixed logarithmic coordinates added to report [X/H].
     grid : Grid or path-like, optional
@@ -50,6 +54,8 @@ class ElementConfig:
     grid: object = field(default=None, repr=False)
     initial: object = None
     weights: object = field(default=None, repr=False)
+    ties: object = field(default=None, repr=False)
+    tie_mode: str = "relative"
 
     def __post_init__(self):
         if not isinstance(self.species, str) or not self.species.strip():
@@ -80,6 +86,9 @@ class ElementConfig:
             ):
                 raise ValueError("Element weights must be a finite nonnegative vector")
             object.__setattr__(self, "weights", tuple(weights))
+        if self.tie_mode not in ("relative", "absolute"):
+            raise ValueError("Invalid element tie_mode")
+        object.__setattr__(self, "ties", deepcopy(self.ties))
         labels = tuple(self.add_labels)
         if len(set(labels)) != len(labels) or self.label in labels:
             raise ValueError("add_labels must be distinct fixed labels")
@@ -229,6 +238,10 @@ class Pipeline:
         Global weights in reconstructed native pixel order. Zero weights also
         exclude pixels from element fits; positive magnitudes affect only the
         global fit, since element fits use their own windows and weights.
+    ties : mapping, optional
+        Global-fit affine relations as in Grid.fit; element ties are separate.
+    tie_mode : {"relative", "absolute"}, optional
+        Global-fit relation mode, relative by default.
     keep_runs : bool, optional
         Retain successful FERRE run files for both fitting stages.
     run_root : path-like, optional
@@ -251,10 +264,14 @@ class Pipeline:
         initial=None,
         free_labels=None,
         weights=None,
+        ties=None,
+        tie_mode="relative",
         keep_runs=False,
         run_root=None,
     ):
         self.grid = grid if isinstance(grid, Grid) else Grid(grid)
+        self.ties = deepcopy(ties)
+        self.tie_mode = tie_mode
         if isinstance(elements, Mapping):
             if "species" in elements and "label" in elements:
                 elements = [elements]
@@ -288,7 +305,7 @@ class Pipeline:
             ):
                 raise ValueError(f"Unknown grid labels in element {item.species}")
         self.free_labels = (
-            self.grid.labels
+            tuple(label for label in self.grid.labels if label not in (ties or {}))
             if free_labels is None
             else (free_labels,) if isinstance(free_labels, str) else tuple(free_labels)
         )
@@ -395,6 +412,8 @@ class Pipeline:
             spectrum,
             start=initial,
             free_labels=self.free_labels,
+            ties=self.ties,
+            tie_mode=self.tie_mode,
             weights=weights,
             keep_runs=self.keep_runs,
             run_root=self.run_root,
@@ -463,6 +482,8 @@ class Pipeline:
                     label=item.label,
                     windows=item.windows,
                     weights=item.weights,
+                    ties=item.ties,
+                    tie_mode=item.tie_mode,
                     add_labels=item.add_labels,
                     mask=mask,
                     keep_runs=self.keep_runs,
@@ -516,12 +537,16 @@ class Pipeline:
                     else "skip" if setting is None else "provided"
                 ),
                 "weights": None if run_weights is None else run_weights.copy(),
+                "ties": deepcopy(self.ties),
+                "tie_mode": self.tie_mode,
                 "elements": tuple(
                     dict(
                         species=e.species,
                         label=e.label,
                         windows=e.windows,
                         weights=e.weights,
+                        ties=deepcopy(e.ties),
+                        tie_mode=e.tie_mode,
                         add_labels=e.add_labels,
                         initial=e.initial,
                         grid_paths=tuple(

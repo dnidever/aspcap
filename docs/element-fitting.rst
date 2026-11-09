@@ -102,3 +102,35 @@ accepting a measurement. Errors are conditional on the fixed global parameters
 and continuum; uncertainty in those inputs and model systematics are not
 propagated. Current fits use linear interpolation. The :doc:`pipeline` interface iterates over a supplied element list and retains
 individual failures. Calibration of abundances remains future work.
+
+Optional parameter ties
+-----------------------
+
+Use ``ties=`` when another grid coordinate should change with the fitted
+abundance coordinate. Nothing is tied by default. For example, if a library
+uses ``METALS`` for [M/H] and ``C``, ``N``, and ``ALPHA`` for relative abundance
+ratios, these relative ties preserve their absolute abundances while METALS
+varies:
+
+.. code-block:: python
+
+   ties = {name: {"METALS": -1.0} for name in ("C", "N", "ALPHA")}
+   result, pixels = grid.fit_abundance(
+       spec.wave, spec.flux, spec.err, continuum, parameters,
+       star_id="star", species="Fe", label="METALS",
+       weights=fe_weights, ties=ties,
+   )
+
+Label names and abundance conventions must match your library. With the
+relative default, each dependent coordinate changes by minus the change in
+METALS from its supplied starting value. This is the metallicity-compensation
+pattern used in the older abundance workflows; it is optional here.
+``add_labels`` uses the final tied coordinates when converting to [X/H].
+The conditional abundance error is scaled by the derivative of that conversion
+with respect to the single free label; uncertainties in the global solution
+and tie coefficients are not included.
+
+The same prescription can be supplied to ``ElementConfig`` or an element
+dictionary in :doc:`pipeline`. Global and element ties are configured separately;
+global ties are not automatically reused during abundance fits.
+See :doc:`grid` for absolute relations, validation, and grid-bound behavior.

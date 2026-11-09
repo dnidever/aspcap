@@ -202,3 +202,11 @@ continuum estimate. See [the spectrum guide](https://github.com/dnidever/aspcap/
 [example](https://github.com/dnidever/aspcap/blob/main/examples/spectrum_continuum.py). The core design is adapted from
 [Doppler Spec1D](https://github.com/dnidever/doppler/blob/6e165f87c6d766eff6eaa1fbee2c82be5bb30cc0/doppler/spec1d.py);
 its MIT notice is retained in `LICENSE-DOPPLER`.
+
+### Optional parameter ties
+
+`Grid.fit`, `Grid.fit_abundance`, and pipeline configurations accept explicit
+parameter ties. For example, `ties={"ALPHA": {"METALS": -1.0}}` changes ALPHA
+by minus the change in METALS, preserving [alpha/H] for that grid convention.
+No ties are applied by default. Absolute affine relations are also supported;
+see the [grid guide](https://aspcap.readthedocs.io/en/latest/grid.html#optional-parameter-ties).

@@ -78,7 +78,7 @@ normalization; see :doc:`continuum`.
 
 For the planned six-label HGE global fit, microturbulence follows a relation
 with log g. This prescription must be encoded in the library or explicitly
-enforced by a future parameter-tying fitting interface. ``Grid`` does not
+enforced with an explicit compatible parameter tie. ``Grid`` does not
 supply that relation. Element-specific mini-grids add a seventh, dedicated
 abundance dimension; their intended use is described in :doc:`element-fitting`.
 
@@ -386,3 +386,51 @@ API reference
    :special-members: __init__, __call__, __repr__
 
 .. autoclass:: aspcap.ferre.FerreFit
+
+Optional parameter ties
+-----------------------
+
+``Grid.fit(..., ties=...)`` supports affine relations in physical label units.
+Dependent labels are not independent fitting dimensions. When ``free_labels``
+is omitted, tied labels are automatically excluded from the free labels.
+
+.. code-block:: python
+
+   # Preserve [alpha/H] as METALS changes from the initial solution.
+   fit = grid.fit(spec, start=parameters, free_labels="METALS",
+                  ties={"ALPHA": {"METALS": -1.0}})
+
+The default ``tie_mode="relative"`` means:
+
+.. math::
+
+   p_t = p_{t,0} + b + \sum_j a_j (p_j-p_{j,0}).
+
+With ``tie_mode="absolute"``, the relation is:
+
+.. math::
+
+   p_t = b + \sum_j a_j p_j.
+
+Use ``{"coefficients": {"LOGG": slope}, "offset": intercept}`` as the tie
+specification when an intercept is needed, for example
+``ties={"VMICRO": {"coefficients": {"LOGG": slope}, "offset": intercept}}``
+with ``tie_mode="absolute"``. This is appropriate only if VMICRO stores the
+linear velocity itself. A log-velocity coordinate needs a relation expressed
+in that coordinate; a linear velocity relation cannot simply be reused.
+Coefficients are user supplied; ASPCAP does not choose a microturbulence law.
+
+Targets and sources must be grid labels, coefficients must be finite, targets
+cannot be free, and ties cannot refer to other dependent labels. Relations are
+linear with optional constant offsets; quadratic ties are not exposed.
+Keep the tied coordinates inside the library during fitting. Native FERRE
+clips tied coordinates at regular-grid boundaries during its objective
+calculations; this wrapper rejects a final analytic tied solution outside the
+grid rather than returning it as a valid relation.
+
+ASPCAP sends ``NTIE``, ``INDTIE``, ``TYPETIE``, ``TTIE0``, and ``TTIE`` to
+FERRE. It reconstructs the final dependent coordinates and reevaluates the
+model there, since native FERRE outputs do not apply ties consistently to the
+saved coordinates/model. This adds one model evaluation. Dependent-coordinate
+errors are ``None``: covariance propagation is not provided. Independent-label
+errors retain FERRE's estimates.
