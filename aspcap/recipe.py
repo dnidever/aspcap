@@ -10,6 +10,7 @@ import numpy as np
 
 from .ferre import Grid
 from .pipeline import Pipeline
+from .batch import batch_spectra
 from .spectrum import Spec1D
 from . import windows
 
@@ -206,12 +207,14 @@ class PipelineRecipe:
             )[1]
         raise ValueError("Unknown weight source; use file, legacy_file, or dr17")
 
+    @batch_spectra
     def fit(
         self,
         spectrum,
         *,
         initial=None,
         star_id="star",
+        star_ids=None,
         raise_on_error=False,
         stop_after=None,
     ):
@@ -377,21 +380,3 @@ class PipelineRecipe:
             record.get("status") == "failed" for record in result.history
         )
         return result
-
-    def fit_many(self, spectra, *, initial=None, star_ids=None, stop_after=None):
-        """Run an ordered batch through a recipe or through step stop_after.
-
-        initial optionally contains one complete start mapping per input.
-        Returns BatchItems in input order with independent RecipeResults/errors.
-        A prefix ending before fitting can succeed with parameters=None.
-        """
-        from .batch import run_many
-
-        return run_many(
-            spectra,
-            lambda spec, identity, parameter: self.fit(
-                spec, initial=parameter, star_id=identity, stop_after=stop_after
-            ),
-            star_ids=star_ids,
-            parameters=initial,
-        )

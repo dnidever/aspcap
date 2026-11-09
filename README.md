@@ -232,9 +232,9 @@ See [Text Pipeline Recipes](https://aspcap.readthedocs.io/en/latest/pipeline-rec
 ### Many spectra
 
 ```python
-items = pipeline.fit_many([spec1, spec2])
-stage_items = pipeline.run_many([spec1, spec2], step="normalize")
-recipe_items = recipe.fit_many([spec1, spec2], stop_after=4)
+items = pipeline.fit([spec1, spec2])
+stage_items = pipeline.normalize([spec1, spec2])
+recipe_items = recipe.fit([spec1, spec2], stop_after=4)
 ```
 
 Results stay in input order; each item has `value`, `error`, `star_id`, and

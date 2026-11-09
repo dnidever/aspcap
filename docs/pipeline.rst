@@ -165,7 +165,7 @@ API reference
 -------------
 
 .. autoclass:: aspcap.Pipeline
-   :members: prepare, normalize, estimate_initial, fit_global, fit_elements, fit, fit_many, run_many
+   :members: prepare, normalize, estimate_initial, fit_global, fit_elements, fit
 
 .. autoclass:: aspcap.PipelineResult
    :members: parameters, abundances, residuals, success
@@ -216,7 +216,7 @@ a starting point for production grids.
 Many spectra
 ------------
 
-``Pipeline.fit_many`` runs complete pipelines; ``Pipeline.run_many`` applies a
-single named stage to a list of Spec1D objects. ``PipelineRecipe.fit_many``
-executes recipes for a list, optionally stopping after a selected step.
+``Pipeline.fit`` and its component methods accept either one Spec1D or a
+list/tuple of spectra. ``PipelineRecipe.fit`` does the same and can stop after
+a selected recipe step. No separate batch method is required.
 See :doc:`batch` for Python and command-line examples and failure handling.

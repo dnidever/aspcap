@@ -10,6 +10,7 @@ import numpy as np
 
 from . import continuum as continuum_module
 from .continuum import ContinuumResult
+from .batch import batch_spectra
 from .ferre import Grid
 from .spectrum import Spec1D
 
@@ -340,7 +341,8 @@ class Pipeline:
             else spectrum.flatten()
         )
 
-    def prepare(self, spectrum):
+    @batch_spectra
+    def prepare(self, spectrum, *, star_ids=None):
         """Return an independent, validated Spec1D with its order layout retained.
 
         Requires native rest-frame wavelengths, a common matching air/vacuum
@@ -355,7 +357,8 @@ class Pipeline:
         self.grid._spectrum_fit_inputs(prepared)
         return prepared
 
-    def normalize(self, spectrum, *, continuum=_UNSET):
+    @batch_spectra
+    def normalize(self, spectrum, *, continuum=_UNSET, star_ids=None):
         """Return (normalized copy, ContinuumResult), or (copy, None) when skipped.
 
         Estimation is order-by-order. Supplied divisors must match the original
@@ -389,7 +392,8 @@ class Pipeline:
             estimate = continuum_module.from_array(spectrum, setting)
         return estimate.apply(spectrum), estimate
 
-    def estimate_initial(self, spectrum, *, initial=_UNSET):
+    @batch_spectra
+    def estimate_initial(self, spectrum, *, initial=_UNSET, star_ids=None):
         """Validate supplied starts and return a complete label dictionary.
 
         Spectrum is accepted for a future estimator interface; this version
@@ -405,7 +409,8 @@ class Pipeline:
             raise ValueError("Initial parameters are outside grid coverage")
         return dict(zip(self.grid.labels, point))
 
-    def fit_global(self, spectrum, initial, *, weights=_UNSET):
+    @batch_spectra
+    def fit_global(self, spectrum, initial, *, weights=_UNSET, star_ids=None):
         """Run Grid.fit on a prepared spectrum using the configured free labels."""
         weights = self.weights if weights is _UNSET else self._weights(weights)
         return self.grid.fit(
@@ -419,12 +424,14 @@ class Pipeline:
             run_root=self.run_root,
         )
 
+    @batch_spectra
     def fit_elements(
         self,
         spectrum,
         parameters,
         *,
         star_id="star",
+        star_ids=None,
         weights=_UNSET,
         raise_on_error=False,
         species=None,
@@ -496,59 +503,7 @@ class Pipeline:
                 fits[item.species] = ElementFitResult(item.species, error=str(error))
         return fits
 
-    def fit_many(self, spectra, *, initial=None, star_ids=None):
-        """Run full pipelines for a list of Spec1D objects, returning BatchItems.
-
-        initial optionally supplies one complete mapping per spectrum. Omit it
-        to use the configured shared initial values. Processing is serial;
-        failures do not discard or prevent other spectra's results.
-        """
-        return self.run_many(spectra, step="fit", parameters=initial, star_ids=star_ids)
-
-    def run_many(self, spectra, *, step="fit", parameters=None, star_ids=None):
-        """Apply a named stage independently to many spectra.
-
-        step is prepare, normalize, estimate_initial, fit_global, fit_elements,
-        or fit. parameters optionally supplies one parameter mapping per input.
-        fit_global requires starts (or configured initial), and fit_elements
-        requires a global solution per input. Each BatchItem.value is the stage's
-        normal single-spectrum return type; BatchItem.error records exceptions.
-        No earlier stages are implicitly run for standalone stage calls.
-        """
-        from .batch import run_many
-
-        if step not in (
-            "prepare",
-            "normalize",
-            "estimate_initial",
-            "fit_global",
-            "fit_elements",
-            "fit",
-        ):
-            raise ValueError("Unknown pipeline stage")
-
-        def call(spec, identity, parameter):
-            if step == "fit":
-                return self.fit(
-                    spec,
-                    star_id=identity,
-                    **({} if parameter is None else {"initial": parameter}),
-                )
-            if step == "fit_elements":
-                if parameter is None:
-                    raise ValueError("fit_elements requires parameters per spectrum")
-                return self.fit_elements(spec, parameter, star_id=identity)
-            if step == "fit_global":
-                start = self.estimate_initial(spec) if parameter is None else parameter
-                return self.fit_global(spec, start)
-            if step == "estimate_initial":
-                return self.estimate_initial(
-                    spec, **({} if parameter is None else {"initial": parameter})
-                )
-            return getattr(self, step)(spec)
-
-        return run_many(spectra, call, star_ids=star_ids, parameters=parameters)
-
+    @batch_spectra
     def fit(
         self,
         spectrum,
@@ -557,6 +512,7 @@ class Pipeline:
         continuum=_UNSET,
         weights=_UNSET,
         star_id=None,
+        star_ids=None,
         raise_on_error=False,
     ):
         """Run the stages and return a PipelineResult, retaining partial results.

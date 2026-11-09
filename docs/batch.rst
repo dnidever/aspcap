@@ -1,7 +1,9 @@
 Batch Processing
 ================
 
-Run many spectra through the same pipeline or a single stage. The first batch
+Use the same methods for one spectrum or many: ``fit(spec)`` returns a
+single result, while ``fit([spec1, spec2])`` returns ordered BatchItems.
+The component pipeline methods follow the same convention. The first batch
 implementation processes inputs **serially**, using independent FERRE runs.
 It preserves order and isolates failures; it does not yet combine stars into
 one FERRE execution or launch parallel workers.
@@ -13,7 +15,7 @@ For an existing Pipeline and a list of Spec1D objects:
 
 .. code-block:: python
 
-   items = pipeline.fit_many([spec1, spec2], star_ids=["star1", "star2"])
+   items = pipeline.fit([spec1, spec2], star_ids=["star1", "star2"])
    for item in items:
        if item.success:
            print(item.star_id, item.value.parameters)
@@ -30,24 +32,25 @@ Apply a single stage, without implicitly running earlier stages:
 
 .. code-block:: python
 
-   prepared = pipeline.run_many([spec1, spec2], step="prepare")
-   normalized = pipeline.run_many([spec1, spec2], step="normalize")
-   global_fits = pipeline.run_many(
-       normalized_specs, step="fit_global",
-       parameters=[initial1, initial2],
+   prepared = pipeline.prepare([spec1, spec2])
+   normalized = pipeline.normalize([spec1, spec2])
+   global_fits = pipeline.fit_global(
+       normalized_specs, initial=[initial1, initial2],
    )
-   elements = pipeline.run_many(
-       normalized_specs, step="fit_elements",
-       parameters=[solution1, solution2],
+   elements = pipeline.fit_elements(
+       normalized_specs, parameters=[solution1, solution2],
    )
 
-Available stage names are prepare, normalize, estimate_initial, fit_global,
-fit_elements, and fit. Each value has that stage's normal return type:
+The methods prepare, normalize, estimate_initial, fit_global, fit_elements,
+and fit all accept one Spec1D or a list/tuple. A single object returns the
+normal single-spectrum value; a list returns a list of BatchItems. Each value has that stage's normal return type:
 normalize returns a (spectrum, continuum) pair; fit_global returns a FerreFit;
 fit_elements returns an element-result dictionary. Keep only successful
 items when constructing inputs for a later standalone stage. A parameter
 sequence must contain one complete mapping per input, in the same order.
-Full ``fit_many(..., initial=[initial1, initial2])`` also supports separate starts;
+A single mapping can instead be shared by every spectrum. Other options,
+including continuum settings and pixel weights, are shared across the batch.
+Full ``fit(..., initial=[initial1, initial2])`` also supports separate starts;
 omit initial to use the pipeline's configured shared starting values.
 
 Recipe batches
@@ -58,8 +61,8 @@ Recipe batches
    from aspcap import PipelineRecipe
 
    recipe = PipelineRecipe.read("pipeline.json")
-   items = recipe.fit_many([spec1, spec2])
-   prefix = recipe.fit_many([spec1, spec2], stop_after=4)
+   items = recipe.fit([spec1, spec2])
+   prefix = recipe.fit([spec1, spec2], stop_after=4)
 
 ``stop_after`` is a one-based inclusive step number. It runs all prerequisites
 through that step, rather than running the selected step in isolation.

@@ -149,7 +149,7 @@ Reference
 ---------
 
 .. autoclass:: aspcap.PipelineRecipe
-   :members: read, example, fit, fit_many
+   :members: read, example, fit
 
 .. autoclass:: aspcap.RecipeResult
    :members: success, parameters, abundances

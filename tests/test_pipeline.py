@@ -159,7 +159,8 @@ class PipelineTest(unittest.TestCase):
         result = p.fit(self.spec, continuum=np.ones(7))
         self.assertIn("NORMALIZATION_FAILED", result.flags)
         with self.assertRaises(TypeError):
-            p.fit([1, 2, 3])
+            p.fit(np.ones(3))
+        self.assertEqual([item.success for item in p.fit([1, 2, 3])], [False]*3)
 
     def test_global_zero_weights_are_carried_into_element_masks(self):
         p = Pipeline(

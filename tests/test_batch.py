@@ -35,31 +35,63 @@ class BatchTests(unittest.TestCase):
         bad = spec.copy()
         bad.wave += 0.1
         pipeline = Pipeline(grid, initial={"ALPHA": 0, "METALS": -0.25})
-        items = pipeline.run_many(
-            [spec, bad, spec], step="prepare", star_ids=["a", "b", "c"]
-        )
+        items = pipeline.prepare([spec, bad, spec], star_ids=["a", "b", "c"])
         self.assertEqual([v.success for v in items], [True, False, True])
         self.assertIsNot(items[0].value, spec)
-        fits = pipeline.fit_many([spec, bad, spec])
+        fits = pipeline.fit([spec, bad, spec])
         self.assertEqual([v.success for v in fits], [True, False, True])
-        single = pipeline.run_many(
-            [spec], step="fit_global", parameters=[{"ALPHA": 0, "METALS": -0.25}]
-        )
+        single = pipeline.fit_global([spec], initial=[{"ALPHA": 0, "METALS": -0.25}])
         self.assertTrue(single[0].success)
         with self.assertRaises(ValueError):
-            pipeline.fit_many([spec], star_ids=[])
+            pipeline.fit([spec], star_ids=[])
 
     def test_recipe_batch_and_prefix(self):
         _, spec = self.spectrum()
         recipe = PipelineRecipe.example("basic", executable=self.exe)
-        items = recipe.fit_many([spec, None, spec], stop_after=2)
+        items = recipe.fit([spec, None, spec], stop_after=2)
         self.assertEqual([v.success for v in items], [True, False, True])
         self.assertIsNone(items[0].value.parameters)
         self.assertEqual(len(items[0].value.history), 2)
-        fits = recipe.fit_many(
-            [spec, spec], initial=[{"ALPHA": 0, "METALS": -0.25}] * 2
-        )
+        fits = recipe.fit([spec, spec], initial=[{"ALPHA": 0, "METALS": -0.25}] * 2)
         self.assertTrue(all(v.success for v in fits))
+
+    def test_all_steps_dispatch_and_parameter_alignment(self):
+        grid, spec = self.spectrum()
+        pipeline = Pipeline(
+            grid,
+            initial={"ALPHA": 0, "METALS": -0.25},
+            elements=[
+                dict(
+                    species="Mg",
+                    label="ALPHA",
+                    windows=[(15002, 15005)],
+                    add_labels=["METALS"],
+                )
+            ],
+        )
+        initial = [
+            {"ALPHA": 0.1, "METALS": -0.25},
+            {"ALPHA": 0.2, "METALS": -0.25},
+            {"ALPHA": 0.3, "METALS": -0.25},
+        ]
+        estimates = pipeline.estimate_initial([spec, None, spec], initial=initial)
+        self.assertEqual([v.success for v in estimates], [True, False, True])
+        self.assertEqual(estimates[2].value["ALPHA"], 0.3)
+        norms = pipeline.normalize([spec, None, spec])
+        self.assertEqual([v.success for v in norms], [True, False, True])
+        elements = pipeline.fit_elements(
+            [spec, spec], parameters={"ALPHA": 0.2, "METALS": -0.25}
+        )
+        self.assertTrue(all(v.success for v in elements))
+        self.assertIsInstance(pipeline.prepare(spec), Spec1D)
+        self.assertEqual(pipeline.fit([]), [])
+        self.assertFalse(hasattr(pipeline, "fit_many"))
+        self.assertFalse(hasattr(pipeline, "run_many"))
+        self.assertFalse(hasattr(PipelineRecipe.example(), "fit_many"))
+        with self.assertRaises(ValueError):
+            pipeline.fit([spec, spec], initial=initial)
+        with self.assertRaises(TypeError):
+            pipeline.fit([None], raise_on_error=True)
 
     def test_cli_list_relative_paths_and_failure_continuation(self):
         self.spectrum()
