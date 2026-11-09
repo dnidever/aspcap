@@ -53,3 +53,16 @@ See :doc:`grid` for model evaluation, fitting, and the Grid API reference.
 .. autofunction:: aspcap.fit_abundance
 
 See :doc:`installation` for documentation build instructions.
+
+Window and weight files
+-----------------------
+
+See :doc:`element-windows` for formats and examples.
+
+.. autofunction:: aspcap.windows.load_weights
+
+.. autofunction:: aspcap.windows.save_weights
+
+.. autofunction:: aspcap.windows.load_windows
+
+.. autofunction:: aspcap.windows.load_legacy_windows

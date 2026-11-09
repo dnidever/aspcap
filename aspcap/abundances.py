@@ -58,6 +58,7 @@ def fit_abundance(
         raise ValueError(
             "Abundance conversion labels must be distinct fixed grid labels"
         )
+    windows = tuple(tuple(pair) for pair in windows)
     if not windows or any(
         not (isfinite(lo) and isfinite(hi) and lo <= hi) for lo, hi in windows
     ):

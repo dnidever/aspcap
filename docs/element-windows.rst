@@ -97,6 +97,64 @@ DR17 did not attempt Ge, Rb, or Yb, and judged P, Cu, Nd, and C13 unreliable
 These are historical prescriptions, not a validation for every HGE spectrum.
 Source commit, checksums, and the SDSS BSD license accompany the bundled files.
 
+Loading your own files
+----------------------
+
+Use a two-column wavelength-weight table for new prescriptions. Rows contain
+wavelength and a finite nonnegative weight; zero excludes the pixel. Files use
+whitespace separators and may contain ``#`` comments. Wavelength units and the
+air/vacuum convention must match the model grid.
+
+.. code-block:: python
+
+   from aspcap import windows
+
+   wave, weights = windows.load_weights("Mg_weights.txt")
+   windows.save_weights("Mg_weights_copy.txt", wave, weights)
+
+To fit, load against the actual native grid wavelengths. Matching may select
+or reorder pixels but never interpolates or fills missing coverage:
+
+.. code-block:: python
+
+   _, weights = windows.load_weights(
+       "Mg_weights.txt", wavelength=grid.wavelengths
+   )
+   fit = grid.fit(spec, start=parameters, free_labels="ALPHA", weights=weights)
+
+For legacy one-column ``.mask`` or ``.filt`` files, provide their source scale
+with ``wavelength=source_wave``, or explicitly use ``scale="dr17"`` for the
+7514-pixel DR17 scale. With ``scale="dr17"``, an optional ``wavelength=`` selects
+matching target pixels. File suffixes do not determine the interpretation.
+
+Simple interval files use a separate reader, since two columns of interval
+bounds cannot safely be distinguished from wavelength-weight columns:
+
+.. code-block:: python
+
+   intervals = windows.load_windows("Mg_intervals.txt")
+   # Pass windows=intervals to grid.fit_abundance(), or make a unit-weight curve:
+   wave, weights = windows.load_windows(
+       "Mg_intervals.txt", wavelength=grid.wavelengths
+   )
+
+Each interval row is an inclusive lower/upper pair. Overlapping intervals form
+a union. A legacy three-column ``.wind`` file is an editing recipe; apply it
+explicitly to its original weights:
+
+.. code-block:: python
+
+   wave, base = windows.load_weights("Mg.filt", scale="dr17")
+   wave, weights = windows.load_legacy_windows(
+       "Mg.wind", wavelength=wave, weights=base
+   )
+   windows.save_weights("Mg_weights.txt", wave, weights)
+
+This applies DR17's strict-interior edits (0 disables, 1 retains, 2 adds unit
+weights). Additional bad-region exclusions in a final ``.mask`` are not encoded
+in ``.wind``. To convert the final DR17 prescription directly, use
+``wave, weights = windows.load_dr17("Mg")`` and then ``save_weights``.
+
 Current abundance interface
 ---------------------------
 
