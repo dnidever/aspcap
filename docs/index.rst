@@ -51,6 +51,7 @@ and :doc:`element-fitting` for the individual-element workflow.
    continuum
    initial-estimates
    global-fitting
+   element-windows
    element-fitting
    pipeline
    spectrum

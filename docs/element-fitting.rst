@@ -31,17 +31,10 @@ library and an explicit abundance-scale convention are required.
 Windows, weights, and masks
 ---------------------------
 
-``Grid.fit_abundance`` accepts inclusive wavelength windows. A usable pixel inside
-any window receives weight one; a pixel outside receives zero. Overlapping
-windows do not increase its weight. Measurement uncertainties also enter the
-fit. A Boolean ``mask`` uses True for unusable pixels. Nonfinite flux and
-nonpositive or nonfinite uncertainties are excluded.
-
-Arbitrary element-specific weight curves are not currently exposed by
-``Grid.fit_abundance``. For explicit nonnegative pixel weights and one free label,
-use ``Grid.fit(..., free_labels=(label,), weights=weights)`` after preparing
-the normalized arrays. This lower-level route does not perform the abundance
-conversion or assemble the element-result dictionary for you.
+The abundance interface uses unit weights inside inclusive windows and zero
+outside, with unusable pixels excluded by the mask and uncertainty checks.
+See :doc:`element-windows` for window selection, the distinction between
+weights and uncertainties, and examples using custom curves with Grid.fit.
 
 A runnable example
 ------------------

@@ -43,6 +43,8 @@ normalized uncertainties receive zero weight.
 Element configuration
 ---------------------
 
+See :doc:`element-windows` for window selection and pixel weighting.
+
 .. literalinclude:: ../examples/mg.json
    :language: json
 
