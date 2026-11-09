@@ -45,7 +45,6 @@ and :doc:`element-fitting` for the individual-element workflow.
    quickstart
    installation
    observed-spectra
-   pipeline
    ferre
    grid
    lsf
@@ -53,6 +52,7 @@ and :doc:`element-fitting` for the individual-element workflow.
    initial-estimates
    global-fitting
    element-fitting
+   pipeline
    spectrum
    inputs
    python-api
