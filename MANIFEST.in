@@ -3,3 +3,4 @@ include README.md
 include CHANGELOG.md
 recursive-include docs *.rst *.py *.txt
 recursive-include examples *.py *.dat *.csv *.json *.rst
+recursive-include tests *.py
