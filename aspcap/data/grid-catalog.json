@@ -5,6 +5,162 @@
   "source_commit": "e134409dc14b20f69e68a0d4d34b2c1b5056a901",
   "entries": [
     {
+      "id": "hge-giants-test-v1",
+      "release": "HGE-test-v1",
+      "source_release": "DR17",
+      "status": "test",
+      "family": "HGE-giant",
+      "dimensions": 6,
+      "teff": [
+        3000,
+        5500
+      ],
+      "logg": [
+        -0.5,
+        3
+      ],
+      "instrument": "apogee-n",
+      "lsf": "a",
+      "synthesis": "synspec-nlte",
+      "description": "Initial HGE giant test grid v1; DR17 Synspec NLTE M/GK, APOGEE-N LSF-a; sparse 3000\u20135500 K, logg <=3; prescribed microturbulence; shared PCA105",
+      "source_config": "https://github.com/dnidever/aspcap/tree/6ff35e3d66772c3fe68544a6bc021b24e3750cdf/examples/hge-giant-grid",
+      "landing_page": "https://drive.google.com/drive/folders/1h4xmyQoyWUpuAnaJu-75_YtOw7m4Aab5",
+      "header": "hge-giants-dr17-3000-5500-apo-a.hdr",
+      "spectra": 673200,
+      "pca_components_per_block": 105,
+      "compression_blocks": 12,
+      "wavelength_pixels": 7514,
+      "vmicro": {
+        "intercept": 2.3379795498263993,
+        "slope": -0.43433033061467907,
+        "gravity": "raw LOGG_SPEC",
+        "units": "km/s"
+      },
+      "files": [
+        {
+          "name": "hge-giants-dr17-3000-5500-apo-a.hdr",
+          "url": "https://drive.google.com/file/d/1mTx4E_LlTYXWipwCRTxiEbTFCzSl7qAJ/view",
+          "provider": "google-drive",
+          "drive_file_id": "1mTx4E_LlTYXWipwCRTxiEbTFCzSl7qAJ",
+          "size": 14063606,
+          "sha256": "6e2d7cd4a67dcb61686a3716f8b755b8ab279a25d66076df46b1666bf466fb43"
+        },
+        {
+          "name": "hge-giants-dr17-3000-5500-apo-a.nodes",
+          "url": "https://drive.google.com/file/d/1O_-TRavNPWs3hUdCPC5g65ebuADxm3VJ/view",
+          "provider": "google-drive",
+          "drive_file_id": "1O_-TRavNPWs3hUdCPC5g65ebuADxm3VJ",
+          "size": 16669099,
+          "sha256": "092b928fb05c9e8b64c8e442669ef3123342020783f7163ac456a355b86c40d4"
+        },
+        {
+          "name": "hge-giants-dr17-3000-5500-apo-a.unf",
+          "url": "https://drive.google.com/file/d/1ujeHV9A2WDouNOTeMbpnIuKQgm1cTwR6/view",
+          "provider": "google-drive",
+          "drive_file_id": "1ujeHV9A2WDouNOTeMbpnIuKQgm1cTwR6",
+          "size": 3392928000,
+          "sha256": "f10a9bef04bd5e5e196d69fd3fd66a12a4fd9a55e04edd7adf43730ac4bb51bd"
+        },
+        {
+          "name": "README.md",
+          "url": "https://drive.google.com/file/d/1IZih3UDQkxh_6dl3hRTUzAUpSuraez6G/view",
+          "provider": "google-drive",
+          "drive_file_id": "1IZih3UDQkxh_6dl3hRTUzAUpSuraez6G",
+          "size": 3506,
+          "sha256": "ad067755656b63ce6c69a1a0e42e4fb12813e80dd07e67140b69931786bc8836"
+        },
+        {
+          "name": "SHA256SUMS",
+          "url": "https://drive.google.com/file/d/1vSAH5xkdsum3xXc1ZD8ivVOHE2l3albr/view",
+          "provider": "google-drive",
+          "drive_file_id": "1vSAH5xkdsum3xXc1ZD8ivVOHE2l3albr",
+          "size": 308,
+          "sha256": "703fc32f86216d35123706ebdcd4443fa31f18c6b1a30db3de60396945b57294"
+        },
+        {
+          "name": "build-metadata.json",
+          "url": "https://drive.google.com/file/d/1ytu6a-c3lWLyOFytU1pS_ljac-XoE9IY/view",
+          "provider": "google-drive",
+          "drive_file_id": "1ytu6a-c3lWLyOFytU1pS_ljac-XoE9IY",
+          "size": 6708,
+          "sha256": "6c5c50b13f63860b933bf7e1c9eddb9cfa7bcb05ef5250b2ed8e414450811258"
+        },
+        {
+          "name": "compression-validation.json",
+          "url": "https://drive.google.com/file/d/1KWL1MTkSgvxkw3j8bPsLImgaAdBz832V/view",
+          "provider": "google-drive",
+          "drive_file_id": "1KWL1MTkSgvxkw3j8bPsLImgaAdBz832V",
+          "size": 1473,
+          "sha256": "2f7b362409185b699e74b50b012ee6adb286a10868f43768eeca674c4d8719e1"
+        },
+        {
+          "name": "compression.json",
+          "url": "https://drive.google.com/file/d/1bA4IvZoOrMlx0K8l5ASg_7im2wx-vPw6/view",
+          "provider": "google-drive",
+          "drive_file_id": "1bA4IvZoOrMlx0K8l5ASg_7im2wx-vPw6",
+          "size": 1559,
+          "sha256": "72c4816b7db0d1193b235d24d21001a63f971a9825f613b29bbd943c2f75df0f"
+        },
+        {
+          "name": "pca-basis.npz",
+          "url": "https://drive.google.com/file/d/1eEXi6bqVAwCH4wrb2-K07eIfpcqcHfSD/view",
+          "provider": "google-drive",
+          "drive_file_id": "1eEXi6bqVAwCH4wrb2-K07eIfpcqcHfSD",
+          "size": 6103557,
+          "sha256": "857a1bfc708d653a03d591ea09f95399acbc9464652b7c6246bdc95199a5022d"
+        },
+        {
+          "name": "pca-global-fit-validation.json",
+          "url": "https://drive.google.com/file/d/1HzvFb6KnNO3YqCKxcXPK-EfkMfsQ_g9M/view",
+          "provider": "google-drive",
+          "drive_file_id": "1HzvFb6KnNO3YqCKxcXPK-EfkMfsQ_g9M",
+          "size": 8897,
+          "sha256": "0e9bc4aa242ac329929879b9aaa4e82fe1c9326b6a81ad07f5e882608a71e4c0"
+        },
+        {
+          "name": "pca-training-validation.json",
+          "url": "https://drive.google.com/file/d/1jcvAzcurBr3h6Mdv6bsiabj4vCScT4Hv/view",
+          "provider": "google-drive",
+          "drive_file_id": "1jcvAzcurBr3h6Mdv6bsiabj4vCScT4Hv",
+          "size": 35576,
+          "sha256": "955cba18fec55e5b47be0404f2fe8a41f17c59e6db620d73fc069c350387fe7e"
+        },
+        {
+          "name": "pca-window-bias-survey.json",
+          "url": "https://drive.google.com/file/d/1MSm76ra5G-zicBu4NeJG8ZgIdDuBrYqc/view",
+          "provider": "google-drive",
+          "drive_file_id": "1MSm76ra5G-zicBu4NeJG8ZgIdDuBrYqc",
+          "size": 9468,
+          "sha256": "99fbb68fa2a626a1f63ff74803c1e2a7325a362cb0a25dd5c42b894d408fb55d"
+        },
+        {
+          "name": "pca-window-fit-validation.json",
+          "url": "https://drive.google.com/file/d/1kzqYAloQ96awUFwRo8fVrj-Usu7CjIpl/view",
+          "provider": "google-drive",
+          "drive_file_id": "1kzqYAloQ96awUFwRo8fVrj-Usu7CjIpl",
+          "size": 12579,
+          "sha256": "199e488ef1a60cee5120ebdf5885f97977c41ee30fa603e936677362a9461bf0"
+        },
+        {
+          "name": "release-manifest.json",
+          "url": "https://drive.google.com/file/d/1JCPzFcRScxCoXZ8KSlxXyWBZ4vbbMFOA/view",
+          "provider": "google-drive",
+          "drive_file_id": "1JCPzFcRScxCoXZ8KSlxXyWBZ4vbbMFOA",
+          "size": 2087,
+          "sha256": "4783f3d0a8eba88600f006fa05810b57987882c8add58b3b224b723c3164cd2a"
+        },
+        {
+          "name": "training-rows.npy",
+          "url": "https://drive.google.com/file/d/1-erFHikXbXqao7JttSbgALeWiPYw2gJJ/view",
+          "provider": "google-drive",
+          "drive_file_id": "1-erFHikXbXqao7JttSbgALeWiPYw2gJJ",
+          "size": 4299088,
+          "sha256": "86bca34312f4023487fdd6f40b7cfbe42bd229841a141395864bca6ba5abc665"
+        }
+      ],
+      "size": 3434145511
+    },
+    {
       "id": "dr17-asset-apogee-n-ba-combo5",
       "release": "DR17",
       "family": "BA",

@@ -1,4 +1,4 @@
-"""Browse a verified SDSS grid catalog and download complete FERRE bundles."""
+"""Browse hosted FERRE grids and download complete, verified bundles."""
 
 from copy import deepcopy
 import hashlib
@@ -40,6 +40,22 @@ def _entries(catalog=None):
                 raise ValueError("Catalog file names must be simple local names")
             if urlsplit(file["url"]).scheme not in ("http", "https"):
                 raise ValueError("Only HTTP(S) grid downloads are supported")
+            provider = file.get("provider", "http")
+            if provider not in ("http", "google-drive"):
+                raise ValueError("Unsupported grid file provider")
+            if provider == "google-drive":
+                drive_id = file.get("drive_file_id", "")
+                if (
+                    not re.fullmatch(r"[A-Za-z0-9_-]+", drive_id)
+                    or urlsplit(file["url"]).hostname != "drive.google.com"
+                    or urlsplit(file["url"]).path != f"/file/d/{drive_id}/view"
+                    or type(file.get("size")) is not int
+                    or file["size"] < 1
+                    or not re.fullmatch(r"[0-9a-f]{64}", file.get("sha256", ""))
+                ):
+                    raise ValueError(
+                        "Drive files require a matching public URL, file ID, pinned size and SHA256"
+                    )
     return entries
 
 
@@ -57,8 +73,8 @@ def available(
     No network access occurs. Each entry includes id, description, family,
     dimensions, published temperature range, synthesis, instrument, LSF group,
     source URLs, and snapshot file/total sizes in bytes. This initial catalog
-    covers available DR17 production FERRE bundles and comparison syntheses,
-    not every raw high-resolution spectrum or every survey. Use info(online=True)
+    covers available DR17 production FERRE bundles, comparison syntheses and
+    explicitly versioned derived HGE test releases. Use info(online=True)
     to check current availability and sizes. Returned mappings are independent.
     catalog optionally names an alternative version-1 JSON catalog.
     """
@@ -81,7 +97,36 @@ def available(
     )
 
 
+def _open_file(file, headers, timeout):
+    if file.get("provider") == "google-drive":
+        from ._google_drive import open_file
+
+        return open_file(file, headers=headers, timeout=timeout)
+    return urlopen(Request(file["url"], headers=headers), timeout=timeout)
+
+
 def _remote(file, timeout):
+    if file.get("provider") == "google-drive":
+        # Drive HEAD may describe HTML rather than the payload. Probe one byte,
+        # following the same confirmation flow used for an actual download.
+        with _open_file(file, {"Range": "bytes=0-0"}, timeout) as response:
+            if response.status == 206:
+                match = re.fullmatch(
+                    r"bytes 0-0/(\d+)", response.headers.get("Content-Range", "")
+                )
+                if not match:
+                    raise ValueError("Drive returned inconsistent probe metadata")
+                size = int(match[1])
+            elif response.status == 200:
+                value = response.headers.get("Content-Length")
+                size = file["size"] if value is None else int(value)
+            else:
+                raise ValueError("Unexpected Drive download status")
+            if size != file["size"]:
+                raise ValueError(
+                    f"Pinned Drive release size changed for {file['name']}"
+                )
+            return dict(file, size=size, etag=response.headers.get("ETag"))
     with urlopen(
         Request(file["url"], method="HEAD", headers={"Accept-Encoding": "identity"}),
         timeout=timeout,
@@ -95,7 +140,10 @@ def _remote(file, timeout):
 
 
 def info(identifier, *, online=False, catalog=None, timeout=30):
-    """Describe one selection; online=True checks HEAD metadata, not payloads.
+    """Describe one selection; online=True probes remote file metadata.
+
+    HTTP files use HEAD; Drive files use a one-byte GET probe because its
+    confirmation pages do not provide reliable HEAD metadata.
 
     Published catalog sizes are snapshots. Online errors propagate explicitly.
     A None total means at least one remote file does not publish its length.
@@ -142,6 +190,27 @@ def _verify(directory, entry):
     return directory / entry["header"]
 
 
+def _console_progress():
+    """Return a compact, throttled stderr progress callback for convenience APIs."""
+    import sys
+
+    previous = {}
+
+    def report(name, done, total):
+        mark = done // (256 * 1024**2)
+        if previous.get(name) != mark or done == total:
+            unit, divisor = (
+                ("GiB", 1024**3)
+                if total is not None and total >= 1024**3
+                else ("MiB", 1024**2)
+            )
+            goal = "unknown" if total is None else f"{total/divisor:.2f} {unit}"
+            print(f"{name}: {done/divisor:.2f} {unit} / {goal}", file=sys.stderr)
+            previous[name] = mark
+
+    return report
+
+
 def download(identifier, directory=None, *, progress=None, catalog=None, timeout=60):
     """Download/resume a complete catalog bundle and return its header Path.
 
@@ -171,7 +240,12 @@ def download(identifier, directory=None, *, progress=None, catalog=None, timeout
     errors leave partial files for a retry. No archives are extracted.
     Checksums detect subsequent local corruption; without publisher checksums
     they do not independently authenticate the initial server payload.
-    Large production libraries can require many GB of storage and RAM.
+    Public Drive files use anonymous confirmation-aware GETs, with pinned
+    publisher sizes and SHA256 hashes. They resume without an ETag only when
+    that immutable checksum identity matches; a server ignoring Range causes
+    a safe restart. No Google account or browser cookies are used.
+    Large production libraries can require many GB of storage. Grid.from_download
+    defaults to direct disk access to reduce FERRE RAM use.
     """
     entry = info(identifier, catalog=catalog)
     if directory is None:
@@ -237,12 +311,18 @@ def download(identifier, directory=None, *, progress=None, catalog=None, timeout
                 and previous.get("etag") == etag
                 and target.stat().st_size == expected
                 and _sha256(target) == previous["sha256"]
+                and (not file.get("sha256") or previous["sha256"] == file["sha256"])
             ):
                 continue
             if target.exists():
                 target.unlink()
             resume = dict(url=file["url"], etag=etag, size=expected)
-            if part.exists() and (state.get(name) != resume or not etag):
+            if file.get("provider") == "google-drive":
+                resume["sha256"] = file["sha256"]
+            can_resume = bool(
+                etag or (file.get("provider") == "google-drive" and file.get("sha256"))
+            )
+            if part.exists() and (state.get(name) != resume or not can_resume):
                 part.unlink()
             state[name] = resume
             _receipt(state_path, state)
@@ -253,10 +333,10 @@ def download(identifier, directory=None, *, progress=None, catalog=None, timeout
             if offset != expected or not part.exists():
                 headers = {"Accept-Encoding": "identity"}
                 if offset:
-                    headers.update(Range=f"bytes={offset}-", **{"If-Range": etag})
-                with urlopen(
-                    Request(file["url"], headers=headers), timeout=timeout
-                ) as response:
+                    headers["Range"] = f"bytes={offset}-"
+                    if etag:
+                        headers["If-Range"] = etag
+                with _open_file(file, headers, timeout) as response:
                     status = response.status
                     if status == 206:
                         match = re.fullmatch(
@@ -299,6 +379,7 @@ def download(identifier, directory=None, *, progress=None, catalog=None, timeout
             digest = _sha256(part)
             # Optional publisher SHA256 entries are checked when provided.
             if file.get("sha256") is not None and digest != file["sha256"]:
+                part.unlink()
                 raise ValueError(f"Publisher checksum mismatch for {name}")
             part.replace(target)
             receipt["files"][name] = dict(

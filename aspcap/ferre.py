@@ -107,6 +107,72 @@ class Grid:
         FERRE executable used for evaluation and fitting.
     """
 
+    @classmethod
+    def from_download(
+        cls,
+        identifier,
+        directory=None,
+        *,
+        progress=True,
+        catalog=None,
+        timeout=60,
+        outwave=None,
+        executable="ferre",
+        f_format=None,
+        f_access=1,
+    ):
+        """Download or reuse a catalog grid and open it with direct disk access.
+
+        Parameters
+        ----------
+        identifier : str
+            Exact catalog ID, for example ``hge-giants-test-v1``. Numbered HGE
+            releases are pinned to published SHA256 hashes; no latest alias is
+            silently substituted.
+        directory : path-like, optional
+            Parent download directory. Defaults to the ASPCAP grid cache.
+        progress : bool or callable, optional
+            True (default) prints compact download progress to stderr. False
+            or None is quiet. A callable receives (filename, bytes_present,
+            total_bytes_or_None). Cached reuse does not print transfer updates.
+        catalog : path-like, optional
+            Alternative version-1 catalog. See :func:`aspcap.grids.download`.
+        timeout : float, optional
+            Timeout per network operation, in seconds.
+        outwave, executable, f_format, f_access : optional
+            Passed to Grid. ``f_access=1`` is the default here, avoiding loading
+            a multi-GB binary library into FERRE memory. Override explicitly if
+            memory access is desired. No FERRE process is started until model
+            evaluation or fitting.
+
+        Returns
+        -------
+        Grid
+            Open grid with verified files. Complete cached downloads are
+            checked and reused offline. Interrupted downloads resume when the
+            provider supports it. Download, integrity and geometry errors
+            propagate; incomplete bundles are never returned.
+        """
+        from .grids import download, _console_progress
+
+        if progress is True:
+            progress = _console_progress()
+        elif progress is False:
+            progress = None
+        elif progress is not None and not callable(progress):
+            raise TypeError("progress must be True, False, None, or a callable")
+
+        path = download(
+            identifier, directory, progress=progress, catalog=catalog, timeout=timeout
+        )
+        return cls(
+            path,
+            outwave=outwave,
+            executable=executable,
+            f_format=f_format,
+            f_access=f_access,
+        )
+
     def __init__(
         self, path, outwave=None, *, executable="ferre", f_format=None, f_access=None
     ):

@@ -288,3 +288,19 @@ and `examples/hge-giant-grid/recompress_ferre.py`.
 Download the adopted HGE grid from the [Google Drive release folder](https://drive.google.com/drive/folders/1h4xmyQoyWUpuAnaJu-75_YtOw7m4Aab5).
 Keep the `.hdr`, `.nodes`, and `.unf` files together and verify `SHA256SUMS`.
 The shared folder includes source provenance, the PCA basis and validation reports.
+
+In the current GitHub version, open the initial versioned test grid with
+automatic download, verification, and offline cache reuse:
+
+```python
+from aspcap import Grid
+
+grid = Grid.from_download("hge-giants-test-v1")
+spectrum = grid({"TEFF": 4500, "LOGG": 1.5, "METALS": -0.5,
+                 "C": 0, "N": 0, "O Mg Si S Ca Ti": 0})
+```
+
+Or download from the command line: `aspcap grids download hge-giants-test-v1`.
+The first download is about 3.20 GiB. Direct disk access is the default; no
+Google sign-in is needed. This is the APOGEE-N **LSF-a** test version, with
+105 shared PCA components per block. Later versions will have distinct IDs.

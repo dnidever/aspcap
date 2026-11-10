@@ -32,6 +32,26 @@ return a usable uncertainty.
 model, and weight at each wavelength. A weight of zero excludes that pixel
 from the element fit.
 
+Try the HGE giant test grid
+---------------------------
+
+For the derived APOGEE-N LSF-a library, download and open the initial test
+version in one call:
+
+.. code-block:: python
+
+   from aspcap import Grid
+
+   grid = Grid.from_download("hge-giants-test-v1")
+   spec = grid({"TEFF": 4500, "LOGG": 1.5, "METALS": -0.5,
+                "C": 0, "N": 0, "O Mg Si S Ca Ti": 0})
+
+The first call downloads about 3.20 GiB and verifies checksums. Later calls
+reuse the cache offline. Direct disk access is the default. This initial test
+grid's coverage, microturbulence prescription, and compression accuracy are
+described in :doc:`hge-giant-grid`. See :doc:`grid-downloads` for the command-line
+interface and download progress options.
+
 Troubleshoot a run
 ------------------
 

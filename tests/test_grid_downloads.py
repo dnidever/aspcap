@@ -47,14 +47,14 @@ def server():
             value = self.headers.get("Range")
             requests.append((self.path, value))
             first = int(value[6:].split("-")[0]) if value else 0
+            end = value[6:].split("-")[1] if value else ""
+            last = int(end) if end else len(data) - 1
             self.send_response(206 if value else 200)
             if value:
-                self.send_header(
-                    "Content-Range", f"bytes {first}-{len(data)-1}/{len(data)}"
-                )
-            self.send_header("Content-Length", str(len(data) - first))
+                self.send_header("Content-Range", f"bytes {first}-{last}/{len(data)}")
+            self.send_header("Content-Length", str(last + 1 - first))
             self.end_headers()
-            self.wfile.write(data[first:])
+            self.wfile.write(data[first : last + 1])
 
     http = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
     thread = Thread(target=http.serve_forever, daemon=True)

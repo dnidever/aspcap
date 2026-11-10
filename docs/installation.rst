@@ -95,7 +95,8 @@ included as package data for examples and tests.
 Install the development version
 -------------------------------
 
-To get the current GitHub code:
+The versioned HGE download entry and ``Grid.from_download`` are currently
+available in the development version. To get the current GitHub code:
 
 .. code-block:: sh
 

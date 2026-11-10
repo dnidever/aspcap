@@ -1,7 +1,7 @@
 Reduced HGE Giant Grid
 ======================
 
-The derived HGE grid combines the DR17 Synspec NLTE **M-giant and GK-giant
+The initial test release, **hge-giants-test-v1**, combines the DR17 Synspec NLTE **M-giant and GK-giant
 APOGEE-N LSF-a** libraries into one six-label library. It covers 3000–5500 K
 and ends at log g=3. Its free labels are C, N, alpha (named
 ``O Mg Si S Ca Ti`` in these libraries), METALS, LOGG, and TEFF.
@@ -101,25 +101,43 @@ be selected with :func:`aspcap.read_apstar`. Keep PCACHI=0 and PCAPROJECT=0
 (the wrapper defaults); PCA-space fitting has not been validated here.
 See :doc:`pca-compression` for reusable training and compression code.
 
-Use direct disk access to avoid loading the full coefficient array:
+Download and open the grid in one call. Direct disk access is the default:
 
 .. code-block:: python
 
    from aspcap import Grid
 
-   grid = Grid("hge-grid/hge-giants-dr17-3000-5500-apo-a.hdr", f_access=1)
+   grid = Grid.from_download("hge-giants-test-v1")
    spec = grid({"C": 0, "N": 0, "O Mg Si S Ca Ti": 0,
                 "METALS": -0.5, "LOGG": 1.5, "TEFF": 4500})
 
-Download the adopted grid from the public
+The first call downloads the complete bundle (about 3.20 GiB) to ASPCAP's
+cache, with checksums checked against the pinned test release. Later calls
+verify and reuse the cached files offline. To choose another parent directory,
+pass ``directory="grids"``. No Google account, API key, or Drive connection is
+required. Download progress is printed by default; use ``progress=False`` for quiet
+operation or ``progress=callback`` for custom reporting.
+
+From the command line:
+
+.. code-block:: console
+
+   aspcap grids info hge-giants-test-v1
+   aspcap grids download hge-giants-test-v1
+
+``test-v1`` identifies this initial test version; later releases will have new
+catalog IDs, rather than silently changing its expected content. It uses only
+**APOGEE-N LSF-a**, not a mixture of LSF groups. See :doc:`grid-downloads` for
+cache locations, interruption/resume, and integrity checks.
+
+For manual downloading, use the public
 `Google Drive release folder <https://drive.google.com/drive/folders/1h4xmyQoyWUpuAnaJu-75_YtOw7m4Aab5>`_.
 Download the ``.hdr``, ``.nodes``, and ``.unf`` files together, retaining their
 names, and verify them against ``SHA256SUMS``. The folder also contains the
 PCA basis, training selection, source provenance, and validation reports.
 No Google sign-in is required to view the shared folder.
 
-The large binary is not bundled with ASPCAP and is not yet in its automated
-download catalog. A reproducible builder and approved node list are in
+The large binary is not bundled with the Python package. A reproducible builder and approved node list are in
 ``examples/hge-giant-grid`` in the repository; see its README for construction
 and compression commands. Building requires network access; using the
 completed library does not.
