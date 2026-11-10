@@ -54,6 +54,7 @@ See :doc:`element-windows` for the formats and legacy readers.
    ferre
    grid
    grid-downloads
+   hge-giant-grid
    lsf
    continuum
    initial-estimates

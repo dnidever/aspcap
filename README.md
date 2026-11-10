@@ -269,3 +269,13 @@ The catalog includes 162 verified DR17 bundles with source metadata and sizes.
 Production grids can require many GB; use `info` or `--dry-run` to inspect a
 selection. Downloads preserve complete file sets, resume interrupted transfers,
 and verify cached files. See [Browse and Download Grids](https://aspcap.readthedocs.io/en/latest/grid-downloads.html).
+
+### Derived six-label giant grid
+
+The HGE grid builder combines the DR17 M- and GK-giant Synspec NLTE APOGEE-N
+LSF-a libraries, covering 3000–5500 K and ending at raw log g=3. It retains
+85 temperature/gravity combinations, prescribes microturbulence from the new
+DR17 RGB relation, and stores 673,200 spectra in sparse NODEFILE format.
+The full grid is approximately 4.6 GiB and is not bundled in the package.
+See [Reduced HGE Giant Grid](https://aspcap.readthedocs.io/en/latest/hge-giant-grid.html)
+and `examples/hge-giant-grid` for the node list and reproducible builder.

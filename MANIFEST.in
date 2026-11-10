@@ -1,4 +1,4 @@
 include LICENSE-DOPPLER
 include README.md
 recursive-include docs *.rst *.py *.txt
-recursive-include examples *.py *.dat *.csv *.json
+recursive-include examples *.py *.dat *.csv *.json *.rst

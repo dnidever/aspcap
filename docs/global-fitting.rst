@@ -29,6 +29,9 @@ to the trial log g throughout optimization; fixing it at the starting value is
 not equivalent. ``Grid.fit`` now accepts explicit affine ties; see :doc:`grid`. The relation
 must be expressed in the actual stored coordinate, including any logarithm.
 
+The :doc:`hge-giant-grid` is a derived six-label option with an empirically
+prescribed microturbulence relation already built into its spectra.
+
 ``Grid.fit`` is a general fitting tool: it varies all labels in the supplied
 grid by default, or only those named in ``free_labels``. It does not automatically
 identify the six HGE labels or apply physical relations between them.

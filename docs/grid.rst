@@ -18,6 +18,9 @@ from a stellar type or element name.
 See :doc:`grid-downloads` to browse the online library catalog, inspect sizes,
 and download a complete grid in Python or from the command line.
 
+See :doc:`hge-giant-grid` for the derived six-label DR17 giant library, its
+nonuniform node selection, and prescribed microturbulence.
+
 Historical grid families and the HGE plan
 --------------------------------------------------
 
@@ -79,7 +82,7 @@ See :doc:`global-fitting`, :doc:`element-fitting`, and :doc:`lsf` for how these
 choices enter each fitting stage. Observations and models must use compatible
 normalization; see :doc:`continuum`.
 
-For the planned six-label HGE global fit, microturbulence follows a relation
+For the six-label HGE global fit, microturbulence follows a relation
 with log g. This prescription must be encoded in the library or explicitly
 enforced with an explicit compatible parameter tie. ``Grid`` does not
 supply that relation. Element-specific mini-grids add a seventh, dedicated

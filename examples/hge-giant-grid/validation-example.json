@@ -1,0 +1,270 @@
+{
+  "status": "validated",
+  "mini": false,
+  "spectra": 673200,
+  "labels": [
+    "C",
+    "N",
+    "O Mg Si S Ca Ti",
+    "METALS",
+    "LOGG",
+    "TEFF"
+  ],
+  "wavelength_pixels": 7514,
+  "six_label_synthetic_fit": {
+    "truth": {
+      "C": 0.0,
+      "N": 0.0,
+      "O Mg Si S Ca Ti": 0.0,
+      "METALS": -0.5,
+      "LOGG": 1.25,
+      "TEFF": 4500.0
+    },
+    "recovered": {
+      "C": -4.1246e-05,
+      "N": -0.000103,
+      "O Mg Si S Ca Ti": -3.8922e-05,
+      "METALS": -0.49999,
+      "LOGG": 1.2499,
+      "TEFF": 4500.0
+    },
+    "absolute_errors": {
+      "C": 4.1246e-05,
+      "N": 0.000103,
+      "O Mg Si S Ca Ti": 3.8922e-05,
+      "METALS": 1.0000000000010001e-05,
+      "LOGG": 9.999999999998899e-05,
+      "TEFF": 0.0
+    },
+    "reduced_chi2": 2.343689098826994e-08,
+    "validation_controls": {
+      "stopcr": 1e-09,
+      "simp": 1e-09,
+      "scope": 0.05
+    },
+    "observation": "Independent interpolation of original GK source coefficients at logg=1 and 1.5, both following vmicro(g), averaged to logg=1.25",
+    "build_state_sha256": "d517c24d7cbcd6290b9ee9de57508cedcf18bc5a9927d2cf4ace224f7458b7db",
+    "coefficient_file_size": 4879353600
+  },
+  "source_node_checks": [
+    {
+      "source": "M",
+      "composition": 0,
+      "teff": 3300,
+      "logg": 0,
+      "max_absolute": 5.0442674699446854e-06,
+      "rms": 2.2474968087559836e-06
+    },
+    {
+      "source": "M",
+      "composition": 0,
+      "teff": 4000,
+      "logg": 2.5,
+      "max_absolute": 5.063159375096049e-06,
+      "rms": 2.2548056878130165e-06
+    },
+    {
+      "source": "GK",
+      "composition": 0,
+      "teff": 4500,
+      "logg": 1,
+      "max_absolute": 5.053624797746181e-06,
+      "rms": 2.1478906512565293e-06
+    },
+    {
+      "source": "GK",
+      "composition": 0,
+      "teff": 5500,
+      "logg": 3,
+      "max_absolute": 5.136653525195101e-06,
+      "rms": 2.073640089069849e-06
+    },
+    {
+      "source": "M",
+      "composition": 1234,
+      "teff": 3300,
+      "logg": 0,
+      "max_absolute": 5.088175794920602e-06,
+      "rms": 2.2482417315638175e-06
+    },
+    {
+      "source": "M",
+      "composition": 1234,
+      "teff": 4000,
+      "logg": 2.5,
+      "max_absolute": 5.107322464725783e-06,
+      "rms": 2.2787421882332894e-06
+    },
+    {
+      "source": "GK",
+      "composition": 1234,
+      "teff": 4500,
+      "logg": 1,
+      "max_absolute": 5.052900385216219e-06,
+      "rms": 2.2106198151446534e-06
+    },
+    {
+      "source": "GK",
+      "composition": 1234,
+      "teff": 5500,
+      "logg": 3,
+      "max_absolute": 5.058023988757654e-06,
+      "rms": 2.0448979646872037e-06
+    },
+    {
+      "source": "M",
+      "composition": 4567,
+      "teff": 3300,
+      "logg": 0,
+      "max_absolute": 5.122380617894606e-06,
+      "rms": 2.0892167636031817e-06
+    },
+    {
+      "source": "M",
+      "composition": 4567,
+      "teff": 4000,
+      "logg": 2.5,
+      "max_absolute": 5.061864059241472e-06,
+      "rms": 2.2406491182722295e-06
+    },
+    {
+      "source": "GK",
+      "composition": 4567,
+      "teff": 4500,
+      "logg": 1,
+      "max_absolute": 5.0706063245975486e-06,
+      "rms": 2.0686918810964282e-06
+    },
+    {
+      "source": "GK",
+      "composition": 4567,
+      "teff": 5500,
+      "logg": 3,
+      "max_absolute": 5.06361880714401e-06,
+      "rms": 2.0381300143429724e-06
+    },
+    {
+      "source": "M",
+      "composition": 7919,
+      "teff": 3300,
+      "logg": 0,
+      "max_absolute": 5.1154540074982435e-06,
+      "rms": 1.980503302793761e-06
+    },
+    {
+      "source": "M",
+      "composition": 7919,
+      "teff": 4000,
+      "logg": 2.5,
+      "max_absolute": 5.074697651874516e-06,
+      "rms": 2.029152271744188e-06
+    },
+    {
+      "source": "GK",
+      "composition": 7919,
+      "teff": 4500,
+      "logg": 1,
+      "max_absolute": 5.133314302740999e-06,
+      "rms": 1.9734496599839773e-06
+    },
+    {
+      "source": "GK",
+      "composition": 7919,
+      "teff": 5500,
+      "logg": 3,
+      "max_absolute": 5.10046724677693e-06,
+      "rms": 2.0193382514134997e-06
+    }
+  ],
+  "off_node_analytic_relation_comparison": [
+    {
+      "source": "M",
+      "teff": 3550,
+      "logg": 0.75,
+      "rms": 0.00030164927870513154,
+      "max_absolute": 0.0031626305639679275
+    },
+    {
+      "source": "M",
+      "teff": 3850,
+      "logg": 1.25,
+      "rms": 0.0002192743259837602,
+      "max_absolute": 0.004689117129724529
+    },
+    {
+      "source": "GK",
+      "teff": 4625,
+      "logg": 1.75,
+      "rms": 3.123996924821989e-05,
+      "max_absolute": 0.00032994216711623725
+    },
+    {
+      "source": "GK",
+      "teff": 5375,
+      "logg": 2.75,
+      "rms": 5.2530444768332346e-05,
+      "max_absolute": 0.0009224942992389629
+    }
+  ],
+  "synthetic_fit": {
+    "truth": {
+      "C": 0.0,
+      "N": 0.5,
+      "O Mg Si S Ca Ti": -0.75,
+      "METALS": -0.75,
+      "LOGG": 1.25,
+      "TEFF": 4500.0
+    },
+    "recovered": {
+      "C": 0.0,
+      "N": 0.5,
+      "O Mg Si S Ca Ti": -0.75,
+      "METALS": -0.75,
+      "LOGG": 1.2509,
+      "TEFF": 4500.1
+    },
+    "reduced_chi2": 1.7996995165773589e-06
+  },
+  "coverage_checks": [
+    {
+      "teff": 3300,
+      "logg": 0,
+      "covered": true
+    },
+    {
+      "teff": 3300,
+      "logg": 3,
+      "covered": false
+    },
+    {
+      "teff": 5000,
+      "logg": 0,
+      "covered": false
+    },
+    {
+      "teff": 5000,
+      "logg": 2,
+      "covered": true
+    },
+    {
+      "teff": 5500,
+      "logg": 3.5,
+      "covered": false
+    }
+  ],
+  "comment": "Node checks compare original source coefficients after micro interpolation. Off-node comparisons measure interpolation of the collapsed relation against original 7D linear interpolation with analytic vmicro(g).",
+  "files": {
+    "hge-giants-dr17-3000-5500-apo-a.hdr": {
+      "bytes": 20113750,
+      "sha256": "6b0ad1e0c9a6f4ee6d274862b2b0096da85cce172a4cd84ddbf582517f267878"
+    },
+    "hge-giants-dr17-3000-5500-apo-a.nodes": {
+      "bytes": 16669099,
+      "sha256": "092b928fb05c9e8b64c8e442669ef3123342020783f7163ac456a355b86c40d4"
+    },
+    "hge-giants-dr17-3000-5500-apo-a.unf": {
+      "bytes": 4879353600,
+      "sha256": "2f9b217d04aade0ba99b4e6da1430c1306d5ff3d21d50d24a170977eea1b322d"
+    }
+  }
+}
