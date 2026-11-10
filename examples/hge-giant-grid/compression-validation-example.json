@@ -1,0 +1,71 @@
+{
+  "status": "validated",
+  "spectra": 673200,
+  "components_per_block": 105,
+  "wavelength_pixels": 7514,
+  "reconstruction_samples": 33,
+  "max_FERRE_Python_difference": 5.142077212472174e-06,
+  "global_fit": {
+    "truth": {
+      "C": 0.0,
+      "N": 0.0,
+      "O Mg Si S Ca Ti": 0.0,
+      "METALS": -0.5,
+      "LOGG": 1.5,
+      "TEFF": 4500.0
+    },
+    "recovered": {
+      "C": -2.9802e-05,
+      "N": -0.00012562,
+      "O Mg Si S Ca Ti": -7.0035e-05,
+      "METALS": -0.49996,
+      "LOGG": 1.5002,
+      "TEFF": 4500.0
+    },
+    "signed_errors": {
+      "C": -2.9802e-05,
+      "N": -0.00012562,
+      "O Mg Si S Ca Ti": -7.0035e-05,
+      "METALS": 3.999999999998449e-05,
+      "LOGG": 0.00019999999999997797,
+      "TEFF": 0.0
+    }
+  },
+  "Mg_fit": {
+    "truth": 0,
+    "recovered": -0.00038934
+  },
+  "coverage": [
+    {
+      "teff": 3300,
+      "logg": 0,
+      "covered": true
+    },
+    {
+      "teff": 3300,
+      "logg": 3,
+      "covered": false
+    },
+    {
+      "teff": 5000,
+      "logg": 0,
+      "covered": false
+    },
+    {
+      "teff": 5000,
+      "logg": 2,
+      "covered": true
+    },
+    {
+      "teff": 5500,
+      "logg": 3.5,
+      "covered": false
+    }
+  ],
+  "validation_controls": {
+    "stopcr": 1e-09,
+    "simp": 1e-09,
+    "scope": 0.05
+  },
+  "note": "Compression loss is characterized separately by held-out spectra and element-window surveys; this check verifies the written library and representative FERRE fits."
+}

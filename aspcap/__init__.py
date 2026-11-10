@@ -2,12 +2,14 @@
 
 from .abundances import fit_abundance
 from .ferre import Grid
+from .pca import PCABasis
 from .spectrum import Spec1D
 from . import continuum, windows, grids
 from .pipeline import Pipeline, PipelineResult, ElementConfig, ElementFitResult
 
 __all__ = [
     "Grid",
+    "PCABasis",
     "grids",
     "BatchItem",
     "read_apstar",

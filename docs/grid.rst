@@ -18,6 +18,8 @@ from a stellar type or element name.
 See :doc:`grid-downloads` to browse the online library catalog, inspect sizes,
 and download a complete grid in Python or from the command line.
 
+See :doc:`pca-compression` for reusable PCA training and recompression tools.
+
 See :doc:`hge-giant-grid` for the derived six-label DR17 giant library, its
 nonuniform node selection, and prescribed microturbulence.
 

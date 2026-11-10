@@ -55,6 +55,7 @@ See :doc:`element-windows` for the formats and legacy readers.
    grid
    grid-downloads
    hge-giant-grid
+   pca-compression
    lsf
    continuum
    initial-estimates

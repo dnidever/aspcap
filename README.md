@@ -276,6 +276,11 @@ The HGE grid builder combines the DR17 M- and GK-giant Synspec NLTE APOGEE-N
 LSF-a libraries, covering 3000–5500 K and ending at raw log g=3. It retains
 85 temperature/gravity combinations, prescribes microturbulence from the new
 DR17 RGB relation, and stores 673,200 spectra in sparse NODEFILE format.
-The full grid is approximately 4.6 GiB and is not bundled in the package.
+The adopted grid uses 105 shared PCA components per block; its coefficient file is approximately 3.16 GiB and is not bundled in the package.
 See [Reduced HGE Giant Grid](https://aspcap.readthedocs.io/en/latest/hge-giant-grid.html)
 and `examples/hge-giant-grid` for the node list and reproducible builder.
+
+Reusable PCA training and compression are available through `aspcap.PCABasis`.
+It supports raw spectra, streaming batches, and recompression from existing
+PCA coefficients. See the [PCA compression guide](https://aspcap.readthedocs.io/en/latest/pca-compression.html)
+and `examples/hge-giant-grid/recompress_ferre.py`.

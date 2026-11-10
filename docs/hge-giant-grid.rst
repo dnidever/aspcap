@@ -82,15 +82,26 @@ the -0.5 grid node slightly extends it.
 PCA representation and use
 --------------------------
 
-Both source PCA bases are retained with a mean-offset component: 151 components
-per block, over 12 blocks. The shared representation reproduces the source
-models without additional PCA truncation. It is a union of basis vectors,
-not an orthogonal PCA basis. Set **PCACHI=0 and PCAPROJECT=0**; these are the
-ASPCAP wrapper defaults. The file stores all 7514 original modeled wavelength
-pixels over the three chips. Observed apStar pixels can be selected with
-:func:`aspcap.read_apstar`.
+The adopted library uses **105 shared PCA components per block**, over 12
+blocks. The basis was trained only within the approved HGE region, using
+537,370 spectra and holding out 135,830 spectra by abundance combination,
+including the abundance corners. Both M- and GK-giant spectra share this basis.
 
-The file bundle is approximately 4.6 GiB. Use direct access:
+Additional reconstruction RMS is 0.0095% of the continuum at the median and
+0.077% at the 99th percentile on held-out spectra. The worst held-out RMS is
+0.352%; the largest pixel error checked on 6,355 spectra is 2.08%. In the
+sampled C/N/Mg/Fe window tests with measurable abundance signals, maximum
+abundance shifts were about 0.006 dex. Weak C/N signals at extreme abundances
+can produce larger shifts. These tests do not validate all elements or fits.
+
+The coefficient file is **3.16 GiB**, down from 4.54 GiB for the original
+151-component union of both source bases. The grid retains all 7514 original
+modeled wavelength pixels over the three chips. Observed apStar pixels can
+be selected with :func:`aspcap.read_apstar`. Keep PCACHI=0 and PCAPROJECT=0
+(the wrapper defaults); PCA-space fitting has not been validated here.
+See :doc:`pca-compression` for reusable training and compression code.
+
+Use direct disk access to avoid loading the full coefficient array:
 
 .. code-block:: python
 
@@ -112,8 +123,7 @@ are recorded with the build. These spot checks do not replace interpolation
 and abundance validation over the full label range. Source atmosphere-hole
 interpolation and source PCA approximation remain inherited from DR17.
 
-The noiseless six-label recovery check uses tighter FERRE convergence controls
-(STOPCR=SIMP=1e-9, SCOPE=0.05). Default stopping settings left differences of
-about 0.046 dex in C, 0.041 dex in gravity, and 3 K in temperature in this test;
-the stricter settings recovered the input labels to better than 0.0002 dex.
-These validation controls do not change the package fitting defaults.
+Noiseless synthetic validation uses tighter FERRE convergence controls
+(STOPCR=SIMP=1e-9, SCOPE=0.05). These validation controls do not change the
+package fitting defaults. The original union-grid checks and the final
+compressed-grid checks are recorded separately.

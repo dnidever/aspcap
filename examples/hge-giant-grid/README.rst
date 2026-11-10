@@ -69,3 +69,33 @@ The noiseless six-label recovery check uses tighter FERRE convergence controls
 about 0.046 dex in C, 0.041 dex in gravity, and 3 K in temperature in this test;
 the stricter settings recovered the input labels to better than 0.0002 dex.
 These validation controls do not change the package fitting defaults.
+
+Shared PCA compression
+----------------------
+
+The adopted HGE library uses 105 shared components per block, reducing the
+coefficient file from 4.54 to 3.16 GiB. The builder above creates the original
+exact union representation; recompression is a separate step.
+
+Reusable training and compression are provided by ``aspcap.PCABasis`` and
+``recompress_ferre.py``. The script supports the spectrum-major, little-endian
+float32 DR17/HGE layout, not every FERRE binary layout::
+
+    python examples/hge-giant-grid/recompress_ferre.py train source.hdr shared-pca.npz --components 105 --rows training-records.npy
+    python examples/hge-giant-grid/recompress_ferre.py compress source.hdr shared-pca.npz compressed-grid
+    python examples/hge-giant-grid/validate_compression.py source.hdr compressed-grid/source.hdr --ferre /path/to/ferre
+
+``make_training_rows.py source.nodes training-records.npy`` reproduces the
+adopted HGE abundance-held-out training split. Training rows are zero-based
+record indices. Select the desired physical region
+and hold out independent validation rows; omitting --rows trains on every row.
+The generic command does not reproduce the historical HGE hold-out split unless
+that row list is supplied. Use the saved adopted basis for byte-consistent HGE
+compression. Keep both training selection and validation records.
+
+See the PCA Compression documentation page for raw-spectrum examples, streaming
+training, coefficient conversion, and accuracy limitations. The original-grid
+validation script validates the exact union representation; the compressed-grid
+validation script checks FERRE reconstruction and representative global/window
+fits against the original models. Compression errors require independent flux
+and abundance validation, beyond the file-format checks.
