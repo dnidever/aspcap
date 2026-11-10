@@ -284,3 +284,7 @@ Reusable PCA training and compression are available through `aspcap.PCABasis`.
 It supports raw spectra, streaming batches, and recompression from existing
 PCA coefficients. See the [PCA compression guide](https://aspcap.readthedocs.io/en/latest/pca-compression.html)
 and `examples/hge-giant-grid/recompress_ferre.py`.
+
+Download the adopted HGE grid from the [Google Drive release folder](https://drive.google.com/drive/folders/1h4xmyQoyWUpuAnaJu-75_YtOw7m4Aab5).
+Keep the `.hdr`, `.nodes`, and `.unf` files together and verify `SHA256SUMS`.
+The shared folder includes source provenance, the PCA basis and validation reports.

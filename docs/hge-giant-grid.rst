@@ -111,11 +111,18 @@ Use direct disk access to avoid loading the full coefficient array:
    spec = grid({"C": 0, "N": 0, "O Mg Si S Ca Ti": 0,
                 "METALS": -0.5, "LOGG": 1.5, "TEFF": 4500})
 
-Keep the .hdr, .nodes, and .unf files together. The large binary is not bundled
-with ASPCAP or hosted by the package's public catalog. A reproducible builder
-and approved node list are in ``examples/hge-giant-grid`` in the repository;
-see its README for preflight, small-grid checks, full construction, and resume
-commands. Building requires network access; using the completed library does not.
+Download the adopted grid from the public
+`Google Drive release folder <https://drive.google.com/drive/folders/1h4xmyQoyWUpuAnaJu-75_YtOw7m4Aab5>`_.
+Download the ``.hdr``, ``.nodes``, and ``.unf`` files together, retaining their
+names, and verify them against ``SHA256SUMS``. The folder also contains the
+PCA basis, training selection, source provenance, and validation reports.
+No Google sign-in is required to view the shared folder.
+
+The large binary is not bundled with ASPCAP and is not yet in its automated
+download catalog. A reproducible builder and approved node list are in
+``examples/hge-giant-grid`` in the repository; see its README for construction
+and compression commands. Building requires network access; using the
+completed library does not.
 
 The M/GK source switch is at 4000–4250 K. Source overlap comparisons and
 checks of reconstruction, interpolation, exclusions, and synthetic recovery
