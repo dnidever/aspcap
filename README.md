@@ -289,7 +289,7 @@ Download the adopted HGE grid from the [Google Drive release folder](https://dri
 Keep the `.hdr`, `.nodes`, and `.unf` files together and verify `SHA256SUMS`.
 The shared folder includes source provenance, the PCA basis and validation reports.
 
-In the current GitHub version, open the initial versioned test grid with
+In ASPCAP 0.7.0 and later, open the initial versioned test grid with
 automatic download, verification, and offline cache reuse:
 
 ```python

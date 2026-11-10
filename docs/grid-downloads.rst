@@ -19,8 +19,8 @@ See the `SDSS library description
 HGE giant test grid
 -------------------
 
-This new interface is available in the current GitHub version; see
-:doc:`installation` for development-version installation.
+This interface is available in ASPCAP 0.7.0 and later; see
+:doc:`installation` to install or upgrade.
 
 The versioned selection ``hge-giants-test-v1`` is the derived six-label grid:
 3000–5500 K, raw log g up to 3, approved excluded corners, prescribed

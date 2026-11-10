@@ -16,6 +16,9 @@ alongside NumPy and SciPy. FERRE supplies the compiled fitting engine;
 ASPCAP supplies the Python analysis interfaces and command-line workflow.
 You do not need to install FERRE separately for a normal installation.
 
+ASPCAP 0.7.0 includes ``Grid.from_download("hge-giants-test-v1")`` and the
+versioned HGE test-grid catalog entry. Upgrade with the command above to use it.
+
 If you still have ASPCAP 0.2.0, upgrade with the command above. To upgrade
 FERRE independently later, run:
 
@@ -95,8 +98,7 @@ included as package data for examples and tests.
 Install the development version
 -------------------------------
 
-The versioned HGE download entry and ``Grid.from_download`` are currently
-available in the development version. To get the current GitHub code:
+To get the current GitHub code:
 
 .. code-block:: sh
 
